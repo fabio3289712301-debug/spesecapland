@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SpeseCoppia</title>
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --blue: #007AFF;
+  --blue-dark: #0056CC;
+  --blue-dim: #E8F0FE;
+  --pink: #FF2D78;
+  --pink-dim: #FFE8F0;
+  --green: #34C759;
+  --green-dim: #E8F8EC;
+  --orange: #FF9500;
+  --purple: #AF52DE;
+  --bg: #F2F2F7;
+  --surface: #FFFFFF;
+  --surface2: #F2F2F7;
+  --border: rgba(0,0,0,0.08);
+  --text: #1C1C1E;
+  --text2: #3C3C43;
+  --text3: #8E8E93;
+  --shadow: 0 2px 20px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --his: #007AFF;
+  --her: #FF2D78;
+  --his-dim: #E8F0FE;
+  --her-dim: #FFE8F0;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family: 'DM Sans', -apple-system, sans-serif; background:var(--bg); color:var(--text); min-height:100vh; font-size:15px; }
+
+/* PASSWORD */
+#pwScreen { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:9999; }
+.pw-wrap { text-align:center; padding:40px 24px; width:100%; max-width:360px; }
+.pw-logo { font-family:'Playfair Display',serif; font-size:2.4rem; font-weight:900; color:var(--blue); margin-bottom:6px; letter-spacing:-1px; }
+.pw-logo span { color:var(--text3); font-weight:400; }
+.pw-sub { font-size:13px; color:var(--text3); margin-bottom:32px; }
+.pw-card { background:var(--surface); border-radius:24px; padding:32px 28px; box-shadow:var(--shadow-lg); }
+.pw-input { width:100%; background:var(--bg); border:none; color:var(--text); padding:16px 20px; border-radius:14px; font-size:18px; text-align:center; letter-spacing:3px; font-family:'DM Sans',sans-serif; margin-bottom:14px; }
+.pw-input:focus { outline:2px solid var(--blue); }
+.pw-btn { width:100%; padding:16px; background:var(--blue); color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+.pw-btn:hover { background:var(--blue-dark); transform:translateY(-1px); }
+.pw-err { color:var(--pink); font-size:13px; margin-top:10px; display:none; }
+
+/* LAYOUT */
+#app { display:none; min-height:100vh; }
+header { background:var(--surface); border-bottom:1px solid var(--border); padding:0 20px; position:sticky; top:0; z-index:100; }
+.header-inner { max-width:1100px; margin:0 auto; height:60px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.logo { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:900; color:var(--blue); white-space:nowrap; }
+.logo em { color:var(--text3); font-style:normal; font-weight:400; font-size:1rem; }
+.nav-tabs { display:flex; gap:2px; background:var(--bg); border-radius:10px; padding:3px; }
+.nav-tab { padding:6px 14px; border-radius:8px; font-size:13px; font-weight:500; color:var(--text3); cursor:pointer; border:none; background:none; transition:all 0.2s; white-space:nowrap; }
+.nav-tab.active { background:var(--surface); color:var(--blue); font-weight:600; box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+.sync-pill { display:flex; align-items:center; gap:5px; padding:5px 10px; border-radius:20px; font-size:11px; font-weight:600; background:var(--bg); color:var(--text3); white-space:nowrap; }
+.sync-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.sync-pill.ok { color:var(--green); }
+.sync-pill.err { color:var(--pink); }
+.sync-pill.loading .sync-dot { animation:blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.page { display:none; max-width:1100px; margin:0 auto; padding:20px 16px 100px; }
+.page.active { display:block; }
+
+/* CARDS */
+.card { background:var(--surface); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); margin-bottom:14px; }
+.card-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--blue); margin-bottom:16px; }
+
+/* STAT BOXES */
+.stats-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px; }
+.stat-box { background:var(--surface); border-radius:var(--radius); padding:18px 16px; box-shadow:var(--shadow); }
+.stat-box.tot { background:linear-gradient(135deg,#f0fdf4,#dcfce7); }
+.stat-box.his { background:linear-gradient(135deg,var(--his-dim),#dbeafe); }
+.stat-box.her { background:linear-gradient(135deg,var(--her-dim),#fce7f3); }
+.stat-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text3); margin-bottom:6px; }
+.stat-val { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; }
+.stat-box.tot .stat-val { color:var(--green); }
+.stat-box.his .stat-val { color:var(--his); }
+.stat-box.her .stat-val { color:var(--her); }
+.stat-sub { font-size:11px; color:var(--text3); margin-top:4px; }
+
+/* MESE COMPARE */
+.month-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.month-card { background:var(--surface); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); }
+.month-title { font-size:13px; font-weight:600; color:var(--text3); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+.month-row { display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:3px 0; }
+.month-total { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; color:var(--text); margin-bottom:8px; }
+.trend-up { color:var(--pink); font-size:11px; }
+.trend-down { color:var(--green); font-size:11px; }
+
+/* CAT CARDS */
+.cat-list { display:flex; flex-direction:column; gap:10px; }
+.cat-item { background:var(--surface); border-radius:var(--radius-sm); padding:14px 16px; box-shadow:var(--shadow); }
+.cat-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.cat-name { font-size:14px; font-weight:600; }
+.cat-tot { font-size:15px; font-weight:700; color:var(--text); }
+.cat-bar { height:8px; background:var(--bg); border-radius:4px; overflow:hidden; display:flex; margin-bottom:6px; }
+.bar-his { height:8px; background:var(--his); border-radius:4px 0 0 4px; transition:width 0.6s ease; }
+.bar-her { height:8px; background:var(--her); flex:1; border-radius:0 4px 4px 0; transition:width 0.6s ease; }
+.bar-only { border-radius:4px!important; }
+.cat-leg { display:flex; gap:14px; font-size:11px; color:var(--text3); }
+.cat-leg .his { color:var(--his); font-weight:600; }
+.cat-leg .her { color:var(--her); font-weight:600; }
+
+/* FILTERS */
+.filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+.filter-chip { padding:7px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--text3); font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif; }
+.filter-chip.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.filter-chip.his-active { background:var(--his); color:#fff; border-color:var(--his); }
+.filter-chip.her-active { background:var(--her); color:#fff; border-color:var(--her); }
+select.filter-sel { padding:7px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; appearance:none; padding-right:28px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238E8E93'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+select.filter-sel:focus { outline:2px solid var(--blue); }
+
+/* SPESE LIST */
+.spesa-row { display:grid; grid-template-columns:50px 44px 1fr 1fr 70px; gap:8px; align-items:center; padding:11px 14px; border-radius:var(--radius-sm); background:var(--surface); box-shadow:var(--shadow); margin-bottom:6px; border-left:3px solid transparent; }
+.spesa-row.his { border-left-color:var(--his); }
+.spesa-row.her { border-left-color:var(--her); }
+.spesa-date { font-size:11px; color:var(--text3); }
+.spesa-badge { font-size:10px; padding:2px 7px; border-radius:20px; font-weight:600; text-align:center; }
+.spesa-badge.his { background:var(--his-dim); color:var(--his); }
+.spesa-badge.her { background:var(--her-dim); color:var(--her); }
+.spesa-neg { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.spesa-note { font-size:11px; color:var(--text3); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.spesa-sub { font-size:11px; padding:2px 7px; border-radius:6px; background:var(--bg); color:var(--text3); display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.spesa-amt { font-size:14px; font-weight:700; text-align:right; }
+.spesa-amt.his { color:var(--his); }
+.spesa-amt.her { color:var(--her); }
+.list-header { display:grid; grid-template-columns:50px 44px 1fr 1fr 70px; gap:8px; padding:4px 14px; margin-bottom:4px; }
+.list-hcol { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text3); }
+
+/* FORM */
+.form-section { margin-bottom:14px; }
+.form-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--text3); margin-bottom:7px; display:block; }
+.form-input { width:100%; background:var(--bg); border:1.5px solid transparent; color:var(--text); padding:13px 15px; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:15px; transition:all 0.2s; appearance:none; }
+.form-input:focus { outline:none; border-color:var(--blue); background:#fff; box-shadow:0 0 0 3px rgba(0,122,255,0.1); }
+.form-row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.person-toggle { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.ptbtn { padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--bg); color:var(--text3); font-size:15px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif; }
+.ptbtn.his.active { border-color:var(--his); background:var(--his-dim); color:var(--his); }
+.ptbtn.her.active { border-color:var(--her); background:var(--her-dim); color:var(--her); }
+.btn-add { width:100%; padding:16px; background:var(--blue); color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; margin-top:6px; }
+.btn-add:hover { background:var(--blue-dark); }
+.btn-add:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-sm { padding:8px 16px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface); color:var(--text); font-size:13px; font-weight:500; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+.btn-sm:hover { background:var(--bg); }
+.btn-danger { border-color:var(--pink); color:var(--pink); }
+.btn-danger:hover { background:var(--her-dim); }
+
+/* BUDGET */
+.budget-item { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--border); }
+.budget-cat { flex:1; font-size:13px; font-weight:500; }
+.budget-bar-wrap { width:120px; height:6px; background:var(--bg); border-radius:3px; overflow:hidden; }
+.budget-bar { height:6px; border-radius:3px; transition:width 0.4s; }
+.budget-ok { background:var(--green); }
+.budget-warn { background:var(--orange); }
+.budget-over { background:var(--pink); }
+.budget-val { font-size:12px; color:var(--text3); min-width:80px; text-align:right; }
+.budget-input { width:80px; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; padding:5px 8px; font-size:13px; text-align:right; font-family:'DM Sans',sans-serif; }
+
+/* CHART */
+.chart-wrap { position:relative; height:220px; }
+
+/* TOP SHOPS */
+.shop-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+.shop-rank { width:22px; height:22px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--text3); flex-shrink:0; }
+.shop-name { flex:1; font-size:13px; font-weight:500; }
+.shop-bar-wrap { width:80px; height:4px; background:var(--bg); border-radius:2px; }
+.shop-bar { height:4px; background:var(--blue); border-radius:2px; }
+.shop-val { font-size:13px; font-weight:700; color:var(--blue); min-width:70px; text-align:right; }
+
+/* SEARCHABLE DROPDOWN */
+.sd-wrap { position:relative; }
+.sd-input { width:100%; background:var(--bg); border:1.5px solid transparent; color:var(--text); padding:13px 40px 13px 15px; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:15px; transition:all 0.2s; }
+.sd-input:focus { outline:none; border-color:var(--blue); background:#fff; box-shadow:0 0 0 3px rgba(0,122,255,0.1); }
+.sd-input.has-value { background:#fff; border-color:var(--border); }
+.sd-arrow { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--text3); pointer-events:none; }
+.sd-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface); border:1.5px solid var(--border); border-radius:12px; box-shadow:var(--shadow-lg); z-index:500; max-height:200px; overflow-y:auto; display:none; }
+.sd-dropdown.open { display:block; }
+.sd-option { padding:11px 15px; font-size:14px; cursor:pointer; transition:background 0.15s; border-bottom:0.5px solid var(--border); }
+.sd-option:last-child { border-bottom:none; }
+.sd-option:hover, .sd-option.active { background:var(--blue-dim); color:var(--blue); }
+.sd-option.selected { font-weight:600; color:var(--blue); }
+.sd-empty { padding:12px 15px; font-size:13px; color:var(--text3); text-align:center; }
+
+/* SEARCH */
+.search-wrap { position:relative; margin-bottom:16px; }
+.search-input { width:100%; background:var(--surface); border:1.5px solid var(--border); color:var(--text); padding:13px 15px 13px 42px; border-radius:14px; font-family:'DM Sans',sans-serif; font-size:15px; }
+.search-input:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,122,255,0.1); }
+.search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; }
+
+/* TOAST */
+#toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:#1C1C1E; color:#fff; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:999; white-space:nowrap; }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.ok { background:#1C1C1E; }
+#toast.err { background:var(--pink); }
+
+/* BOTTOM NAV */
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(20px); border-top:1px solid var(--border); display:flex; padding:8px 0 20px; z-index:100; }
+.bnav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:4px; border:none; background:none; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:500; transition:color 0.2s; }
+.bnav-item.active { color:var(--blue); }
+.bnav-icon { font-size:22px; }
+
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:200; display:none; align-items:flex-end; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface); border-radius:24px 24px 0 0; padding:24px 20px 40px; width:100%; max-width:600px; max-height:85vh; overflow-y:auto; }
+.modal-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 20px; }
+.modal-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:20px; }
+
+@media(min-width:600px) {
+  .modal-overlay { align-items:center; }
+  .modal { border-radius:24px; max-width:500px; }
+  .bottom-nav { display:none; }
+  .page { padding-top:24px; }
+}
+@media(max-width:480px) {
+  .stats-row { grid-template-columns:1fr; }
+  .month-cards { grid-template-columns:1fr; }
+  .form-row2 { grid-template-columns:1fr; }
+  .nav-tabs { display:none; }
+  .stat-val { font-size:1.5rem; }
+}
+.section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text3); margin:20px 0 10px; }
+.empty-state { text-align:center; padding:40px 20px; color:var(--text3); }
+.empty-icon { font-size:48px; margin-bottom:12px; }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD -->
+<div id="pwScreen">
+  <div class="pw-wrap">
+    <div class="pw-logo">Spese<span>Coppia</span></div>
+    <div class="pw-sub">Gestione spese di famiglia</div>
+    <div class="pw-card">
+      <input class="pw-input" type="password" id="pwInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPw()">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <input type="checkbox" id="rememberMe" checked style="width:18px;height:18px;cursor:pointer;accent-color:var(--blue);">
+        <label for="rememberMe" style="font-size:13px;color:var(--text3);cursor:pointer;">Ricordami su questo dispositivo</label>
+      </div>
+      <button class="pw-btn" onclick="checkPw()">Accedi</button>
+      <div class="pw-err" id="pwErr">Password errata</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-inner">
+      <div class="logo">Spese<em>Coppia</em></div>
+      <div class="nav-tabs" id="navTabs">
+        <button class="nav-tab active" onclick="goPage('dashboard',this)">Dashboard</button>
+        <button class="nav-tab" onclick="goPage('statistiche',this)">Statistiche</button>
+        <button class="nav-tab" onclick="goPage('spese',this)">Spese</button>
+        <button class="nav-tab" onclick="goPage('aggiungi',this)">+ Aggiungi</button>
+        <button class="nav-tab" onclick="goPage('impostazioni',this)">Impostazioni</button>
+      </div>
+      <div class="sync-pill loading" id="syncPill"><div class="sync-dot"></div><span id="syncTxt">Sync</span></div>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="filter-bar" style="margin-bottom:16px;">
+      <select class="filter-sel" id="dashMonth" onchange="renderDashboard()">
+        <option value="">Tutti i mesi</option>
+        <option value="2026-02">Febbraio 2026</option>
+        <option value="2026-03">Marzo 2026</option>
+      </select>
+    </div>
+    <div class="stats-row" id="dashStats"></div>
+    <div class="month-cards" id="dashMonths"></div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">Andamento mensile</div>
+      <div class="chart-wrap"><canvas id="chartMensile"></canvas></div>
+    </div>
+  </div>
+
+  <!-- STATISTICHE -->
+  <div class="page" id="page-statistiche">
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="setStatFilter('chi','tutti',this)">Tutti</button>
+      <button class="filter-chip" onclick="setStatFilter('chi','his',this)">👨 Fabio</button>
+      <button class="filter-chip" onclick="setStatFilter('chi','her',this)">👩 Marzia</button>
+      <select class="filter-sel" id="statMonth" onchange="renderStats()">
+        <option value="">Tutti i mesi</option>
+        <option value="2026-02">Febbraio 2026</option>
+        <option value="2026-03">Marzo 2026</option>
+      </select>
+    </div>
+    <div class="card">
+      <div class="card-title">Distribuzione per categoria</div>
+      <div class="chart-wrap"><canvas id="chartCat"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">🏪 Top negozi</div>
+      <div id="topShops"></div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">📊 Categorie dettaglio</div>
+      <div class="cat-list" id="statCats"></div>
+    </div>
+  </div>
+
+  <!-- SPESE -->
+  <div class="page" id="page-spese">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" type="text" id="searchInput" placeholder="Cerca negozio, categoria, nota..." oninput="renderSpese()">
+    </div>
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="setListFilter('chi','tutti',this)">Tutti</button>
+      <button class="filter-chip" onclick="setListFilter('chi','his',this)">👨 Fabio</button>
+      <button class="filter-chip" onclick="setListFilter('chi','her',this)">👩 Marzia</button>
+      <select class="filter-sel" id="listMonth" onchange="renderSpese()">
+        <option value="">Tutti i mesi</option>
+        <option value="2026-02">Febbraio 2026</option>
+        <option value="2026-03">Marzo 2026</option>
+      </select>
+      <select class="filter-sel" id="listCat" onchange="renderSpese()">
+        <option value="">Tutte le categorie</option>
+      </select>
+      <select class="filter-sel" id="listSub" onchange="renderSpese()">
+        <option value="">Tutte le sottocategorie</option>
+      </select>
+      <select class="filter-sel" id="listNeg" onchange="renderSpese()">
+        <option value="">Tutti i negozi</option>
+      </select>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Trovate: <span id="speseCount">0</span> spese — Totale: <span id="speseTotal">€0</span></div>
+    <div class="list-header">
+      <span class="list-hcol">Data</span>
+      <span class="list-hcol">Chi</span>
+      <span class="list-hcol">Negozio</span>
+      <span class="list-hcol">Sottocategoria</span>
+      <span class="list-hcol" style="text-align:right">€</span>
+    </div>
+    <div id="speseList"></div>
+  </div>
+
+  <!-- AGGIUNGI -->
+  <div class="page" id="page-aggiungi">
+    <div class="card">
+      <div class="card-title">Nuova spesa</div>
+
+      <!-- CHI -->
+      <div class="person-toggle">
+        <button class="ptbtn his active" id="btnHis" onclick="selectPerson('his')">👨 Fabio</button>
+        <button class="ptbtn her" id="btnHer" onclick="selectPerson('her')">👩 Marzia</button>
+      </div>
+
+      <!-- DATA + IMPORTO -->
+      <div class="form-row2">
+        <div class="form-section">
+          <label class="form-label">Data</label>
+          <input class="form-input" type="date" id="inpDate">
+        </div>
+        <div class="form-section">
+          <label class="form-label">Importo €</label>
+          <input class="form-input" type="number" id="inpAmount" placeholder="0.00" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+
+      <!-- NEGOZIO -->
+      <div class="form-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+          <label class="form-label" style="margin-bottom:0">Negozio</label>
+          <span id="autoFillBadge" style="font-size:11px;color:var(--green);font-weight:600;display:none;">✨ Compilato automaticamente</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div class="sd-wrap" style="flex:1;" id="sdNeg-wrap">
+            <input class="sd-input" type="text" id="sdNeg" placeholder="Cerca negozio..." autocomplete="off" oninput="sdFilter('neg')" onfocus="sdOpen('neg')" onblur="sdBlur('neg')">
+            <span class="sd-arrow">▼</span>
+            <div class="sd-dropdown" id="sdNeg-dropdown"></div>
+          </div>
+          <button class="btn-sm" onclick="addNewVoice('negozio')" style="padding:0 14px;font-size:18px;border-radius:12px;height:50px;flex-shrink:0;">+</button>
+        </div>
+        <input type="hidden" id="inpNegozio">
+      </div>
+
+      <!-- SOTTOCATEGORIA + CATEGORIA -->
+      <div class="form-row2">
+        <div class="form-section">
+          <label class="form-label">Sottocategoria</label>
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <div class="sd-wrap" style="flex:1;" id="sdSub-wrap">
+              <input class="sd-input" type="text" id="sdSub" placeholder="Cerca..." autocomplete="off" oninput="sdFilter('sub')" onfocus="sdOpen('sub')" onblur="sdBlur('sub')">
+              <span class="sd-arrow">▼</span>
+              <div class="sd-dropdown" id="sdSub-dropdown"></div>
+            </div>
+            <button class="btn-sm" onclick="addNewVoice('subcategory')" style="padding:0 12px;font-size:18px;border-radius:12px;height:50px;flex-shrink:0;">+</button>
+          </div>
+          <input type="hidden" id="inpSubcat">
+        </div>
+        <div class="form-section">
+          <label class="form-label">Categoria</label>
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <div class="sd-wrap" style="flex:1;" id="sdCat-wrap">
+              <input class="sd-input" type="text" id="sdCat" placeholder="Cerca..." autocomplete="off" oninput="sdFilter('cat')" onfocus="sdOpen('cat')" onblur="sdBlur('cat')">
+              <span class="sd-arrow">▼</span>
+              <div class="sd-dropdown" id="sdCat-dropdown"></div>
+            </div>
+            <button class="btn-sm" onclick="addNewVoice('category')" style="padding:0 12px;font-size:18px;border-radius:12px;height:50px;flex-shrink:0;">+</button>
+          </div>
+          <input type="hidden" id="inpCat">
+        </div>
+      </div>
+
+      <!-- NOTE -->
+      <div class="form-section">
+        <label class="form-label">Note (opzionale)</label>
+        <input class="form-input" type="text" id="inpNote" placeholder="Es. Gaia, Famiglia...">
+      </div>
+
+      <button class="btn-add" id="btnSave" onclick="saveExpense()">Aggiungi Spesa</button>
+    </div>
+  </div>
+
+  <!-- MODAL NUOVA VOCE -->
+  <div class="modal-overlay" id="newVoiceModal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="newVoiceTitle">Aggiungi nuovo negozio</div>
+      <div class="form-section">
+        <label class="form-label" id="newVoiceLabel">Nome negozio</label>
+        <input class="form-input" type="text" id="newVoiceInput" placeholder="Scrivi il nome...">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button class="btn-sm" onclick="closeNewVoice()" style="flex:1;">Annulla</button>
+        <button class="btn-add" onclick="confirmNewVoice()" style="flex:2;margin-top:0;">Aggiungi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPOSTAZIONI -->
+  <div class="page" id="page-impostazioni">
+    <div class="card">
+      <div class="card-title">💰 Budget mensile per categoria</div>
+      <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">Imposta un budget mensile. Riceverai un avviso quando lo superi.</p>
+      <div id="budgetList"></div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">📤 Esporta</div>
+      <p style="font-size:13px;color:var(--text3);margin-bottom:14px;">Filtra i dati prima di esportare.</p>
+
+      <div class="form-row2" style="margin-bottom:12px;">
+        <div>
+          <label class="form-label">Da data</label>
+          <input class="form-input" type="date" id="expFrom">
+        </div>
+        <div>
+          <label class="form-label">A data</label>
+          <input class="form-input" type="date" id="expTo">
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label class="form-label">Mese</label>
+        <select class="form-input" id="expMonth">
+          <option value="">Tutti i mesi</option>
+          <option value="2026-02">Febbraio 2026</option>
+          <option value="2026-03">Marzo 2026</option>
+        </select>
+      </div>
+
+      <div class="form-row2" style="margin-bottom:12px;">
+        <div>
+          <label class="form-label">Chi</label>
+          <select class="form-input" id="expChi">
+            <option value="">Tutti</option>
+            <option value="his">Fabio</option>
+            <option value="her">Marzia</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Categoria</label>
+          <select class="form-input" id="expCat">
+            <option value="">Tutte</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row2" style="margin-bottom:16px;">
+        <div>
+          <label class="form-label">Sottocategoria</label>
+          <select class="form-input" id="expSub">
+            <option value="">Tutte</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Negozio</label>
+          <select class="form-input" id="expNeg">
+            <option value="">Tutti</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Spese selezionate: <span id="expCount" style="font-weight:700;color:var(--blue)">0</span></div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-sm" onclick="exportCSV()">📊 Esporta CSV</button>
+        <button class="btn-sm" onclick="exportPDF()">📄 Esporta PDF</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">📥 Importa Excel</div>
+      <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Importa un file Excel con le colonne: Data, Chi, Importo, Negozio, Sottocategoria, Categoria, Note</p>
+      <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
+      <button class="btn-sm" onclick="document.getElementById('importFile').click()">📂 Scegli file Excel</button>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">🔄 Sincronizzazione</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-sm" onclick="loadFromCloud()">☁️ Ricarica dal cloud</button>
+        <button class="btn-sm btn-danger" onclick="logout()">🚪 Esci / Cambia account</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">🔔 Notifiche Email</div>
+      <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">Quando attivo, ogni nuova spesa invia una email a Fabio e Marzia.</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:14px;font-weight:500;">Invia email ad ogni spesa</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">📧 email@spesacoppia.it<br>📧 email@spesacoppia.it</div>
+        </div>
+        <div onclick="toggleNotify()" id="notifyToggle" style="width:50px;height:28px;border-radius:14px;background:var(--bg);border:2px solid var(--border);cursor:pointer;position:relative;transition:all 0.3s;flex-shrink:0;">
+          <div id="notifyThumb" style="width:22px;height:22px;border-radius:50%;background:#ccc;position:absolute;top:1px;left:1px;transition:all 0.3s;"></div>
+        </div>
+      </div>
+      <div id="notifyStatus" style="font-size:12px;color:var(--text3);margin-top:10px;text-align:center;">🔕 Notifiche disabilitate</div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">✏️ Gestione Voci</div>
+      <p style="font-size:13px;color:var(--text3);margin-bottom:14px;">Rinomina o elimina negozi, sottocategorie e categorie. La modifica si applica a tutte le spese collegate.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="filter-chip active" id="gv-tab-neg" onclick="switchGVTab('negozio',this)">Negozi</button>
+        <button class="filter-chip" id="gv-tab-sub" onclick="switchGVTab('subcategory',this)">Sottocategorie</button>
+        <button class="filter-chip" id="gv-tab-cat" onclick="switchGVTab('category',this)">Categorie</button>
+      </div>
+
+      <div class="search-wrap" style="margin-bottom:10px;">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" id="gvSearch" placeholder="Cerca voce..." oninput="renderGVList()" style="font-size:13px;padding:10px 10px 10px 38px;">
+      </div>
+
+      <div id="gvList"></div>
+    </div>
+  </div>
+
+  <!-- MODAL RINOMINA VOCE -->
+  <div class="modal-overlay" id="renameModal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="renameTitle">Rinomina</div>
+      <div class="form-section">
+        <label class="form-label">Nuovo nome</label>
+        <input class="form-input" type="text" id="renameInput" placeholder="Scrivi il nuovo nome...">
+      </div>
+      <p style="font-size:12px;color:var(--text3);margin:8px 0 16px;">La modifica verrà applicata a tutte le spese con questa voce.</p>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-sm btn-danger" onclick="deleteVoice()" style="flex:1;">🗑️ Elimina</button>
+        <button class="btn-sm" onclick="closeRename()" style="flex:1;">Annulla</button>
+        <button class="btn-add" onclick="confirmRename()" style="flex:2;margin-top:0;">Rinomina</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bnav-item active" id="bn0" onclick="goPageMobile('dashboard',0)"><span class="bnav-icon">🏠</span>Home</button>
+    <button class="bnav-item" id="bn1" onclick="goPageMobile('statistiche',1)"><span class="bnav-icon">📊</span>Stats</button>
+    <button class="bnav-item" id="bn2" onclick="goPageMobile('spese',2)"><span class="bnav-icon">📋</span>Spese</button>
+    <button class="bnav-item" id="bn3" onclick="goPageMobile('aggiungi',3)"><span class="bnav-icon">➕</span>Aggiungi</button>
+    <button class="bnav-item" id="bn4" onclick="goPageMobile('impostazioni',4)"><span class="bnav-icon">⚙️</span>Altro</button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<!-- MODAL EDIT -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Modifica spesa</div>
+    <div class="person-toggle">
+      <button class="ptbtn his active" id="ePerson_his" onclick="setEditPerson('his')">👨 Fabio</button>
+      <button class="ptbtn her" id="ePerson_her" onclick="setEditPerson('her')">👩 Marzia</button>
+    </div>
+    <div class="form-row2">
+      <div class="form-section"><label class="form-label">Data</label><input class="form-input" type="date" id="eDate"></div>
+      <div class="form-section"><label class="form-label">Importo €</label><input class="form-input" type="number" id="eAmount" step="0.01"></div>
+    </div>
+    <div class="form-section"><label class="form-label">Negozio</label><input class="form-input" type="text" id="eNegozio" list="negList"></div>
+    <div class="form-row2">
+      <div class="form-section"><label class="form-label">Sottocategoria</label><input class="form-input" type="text" id="eSubcat" list="subList"></div>
+      <div class="form-section"><label class="form-label">Categoria</label><input class="form-input" type="text" id="eCat" list="catList"></div>
+    </div>
+    <div class="form-section"><label class="form-label">Note</label><input class="form-input" type="text" id="eNote"></div>
+    <div style="display:flex;gap:10px;margin-top:6px;">
+      <button class="btn-sm btn-danger" onclick="deleteExpense()" style="flex:1;">Elimina</button>
+      <button class="btn-add" onclick="saveEdit()" style="flex:2;margin-top:0;">Salva</button>
+    </div>
+    <button class="btn-sm" onclick="closeEdit()" style="width:100%;margin-top:10px;">Annulla</button>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwipx-UNSWy0zqFZT6rN3dixX_tOdBzohJKUl6zUXE8BoAq_hr5ICkPzEmWNP_KtDLpAg/exec';
+const PASSWORD = 'Fabio328!';
+
+// DATI INIZIALI
+let allExpenses = [{"id": "5b5397fa", "date": "2026-02-02", "month": "2026-02", "person": "her", "negozio": "Tutto Casa", "subcategory": "Casalinghi", "category": "🏠 Casa", "amount": 17.0, "note": ""}, {"id": "5c2e43c4", "date": "2026-02-02", "month": "2026-02", "person": "her", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 112.0, "note": ""}, {"id": "879aea31", "date": "2026-02-02", "month": "2026-02", "person": "her", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 54.0, "note": ""}, {"id": "9e98cde8", "date": "2026-02-02", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 28.0, "note": ""}, {"id": "e8d52176", "date": "2026-02-02", "month": "2026-02", "person": "his", "negozio": "Palestra Snellife", "subcategory": "Abbonamento", "category": "🏋️ Sport & Fitness", "amount": 100.0, "note": ""}, {"id": "78aca19a", "date": "2026-02-03", "month": "2026-02", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "7865bd63", "date": "2026-02-04", "month": "2026-02", "person": "her", "negozio": "Bolletta Luce", "subcategory": "Luce", "category": "💡 Bollette & Utenze", "amount": 139.88, "note": ""}, {"id": "f7e97df7", "date": "2026-02-04", "month": "2026-02", "person": "her", "negozio": "Bolletta Gas", "subcategory": "Gas", "category": "💡 Bollette & Utenze", "amount": 150.06, "note": ""}, {"id": "c4635dc3", "date": "2026-02-04", "month": "2026-02", "person": "his", "negozio": "Scuola Gaia", "subcategory": "Fondo Cassa Scuola Gaia", "category": "📚 Istruzione", "amount": 10.0, "note": ""}, {"id": "3693e72d", "date": "2026-02-04", "month": "2026-02", "person": "his", "negozio": "Osteopata Fabio", "subcategory": "Osteopata", "category": "👨‍⚕️ Medici & Visite", "amount": 50.0, "note": ""}, {"id": "7ea50c52", "date": "2026-02-05", "month": "2026-02", "person": "her", "negozio": "Dodeca", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 25.78, "note": ""}, {"id": "45b09681", "date": "2026-02-05", "month": "2026-02", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 50.0, "note": ""}, {"id": "3c29b334", "date": "2026-02-05", "month": "2026-02", "person": "her", "negozio": "Privalia", "subcategory": "Vestiti Gaia & Gabriele", "category": "👗 Abbigliamento", "amount": 60.42, "note": ""}, {"id": "a558dcea", "date": "2026-02-05", "month": "2026-02", "person": "his", "negozio": "Farmacia Mascia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 61.0, "note": ""}, {"id": "bdad434e", "date": "2026-02-06", "month": "2026-02", "person": "his", "negozio": "Scuola Gaia", "subcategory": "Retta", "category": "📚 Istruzione", "amount": 182.0, "note": ""}, {"id": "a5666021", "date": "2026-02-06", "month": "2026-02", "person": "his", "negozio": "Scuola Danza", "subcategory": "Retta", "category": "🏋️ Sport & Fitness", "amount": 50.0, "note": ""}, {"id": "6bfddb14", "date": "2026-02-06", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 24.0, "note": ""}, {"id": "d1e056d6", "date": "2026-02-06", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 22.0, "note": ""}, {"id": "cc9e07a9", "date": "2026-02-07", "month": "2026-02", "person": "her", "negozio": "Parrucchiere", "subcategory": "Shampo Marzia", "category": "💈 Cura Personale", "amount": 10.0, "note": ""}, {"id": "0ba5b3be", "date": "2026-02-07", "month": "2026-02", "person": "his", "negozio": "Alaska Nord", "subcategory": "Cibo Asporto", "category": "🎉 Svago & Uscite", "amount": 73.5, "note": ""}, {"id": "b353a491", "date": "2026-02-08", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 29.0, "note": ""}, {"id": "63e0aa2d", "date": "2026-02-08", "month": "2026-02", "person": "his", "negozio": "Negozio Surgelati", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 40.0, "note": ""}, {"id": "c42326c1", "date": "2026-02-08", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 5.0, "note": ""}, {"id": "765cfd54", "date": "2026-02-10", "month": "2026-02", "person": "her", "negozio": "Scuola Gaia", "subcategory": "Festa Scolastica", "category": "🎁 Regali & Cerimonie", "amount": 11.0, "note": ""}, {"id": "555744f1", "date": "2026-02-10", "month": "2026-02", "person": "her", "negozio": "Assicurazione Scuola", "subcategory": "Assicurazione", "category": "🏦 Tasse & Burocrazia", "amount": 6.5, "note": ""}, {"id": "83d43c4b", "date": "2026-02-10", "month": "2026-02", "person": "her", "negozio": "Negozio Online", "subcategory": "Decoro Casa", "category": "🏠 Casa", "amount": 125.8, "note": ""}, {"id": "5e545ac3", "date": "2026-02-10", "month": "2026-02", "person": "his", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 40.4, "note": ""}, {"id": "681bdb6f", "date": "2026-02-10", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 16.0, "note": ""}, {"id": "c49a926e", "date": "2026-02-11", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 23.0, "note": ""}, {"id": "47412736", "date": "2026-02-12", "month": "2026-02", "person": "her", "negozio": "Benzinaio", "subcategory": "Benzina Marzia", "category": "🚗 Auto & Trasporti", "amount": 20.0, "note": ""}, {"id": "bc3cc561", "date": "2026-02-12", "month": "2026-02", "person": "his", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 40.0, "note": "Borraccia e Tatuaggi Kpop Gaia"}, {"id": "f98f8896", "date": "2026-02-12", "month": "2026-02", "person": "his", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 10.0, "note": "Paraspigoli Gabriele"}, {"id": "2fb828b9", "date": "2026-02-12", "month": "2026-02", "person": "her", "negozio": "Anna Estetista", "subcategory": "Ceretta", "category": "💈 Cura Personale", "amount": 39.0, "note": ""}, {"id": "085a3eca", "date": "2026-02-13", "month": "2026-02", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 80.0, "note": ""}, {"id": "509b5b8c", "date": "2026-02-13", "month": "2026-02", "person": "her", "negozio": "Dodeca", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 53.95, "note": ""}, {"id": "aa09dd81", "date": "2026-02-13", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 10.0, "note": ""}, {"id": "522e66af", "date": "2026-02-13", "month": "2026-02", "person": "his", "negozio": "EnzoLed", "subcategory": "Manutenzione Casa", "category": "🏠 Casa", "amount": 80.0, "note": "Faretti Led Cucina Salone"}, {"id": "151ff25f", "date": "2026-02-13", "month": "2026-02", "person": "his", "negozio": "Polleria", "subcategory": "Cibo Asporto", "category": "🥡 Asporto", "amount": 16.0, "note": "Pollo e Patatine"}, {"id": "c17865bb", "date": "2026-02-14", "month": "2026-02", "person": "her", "negozio": "Centro Estetico", "subcategory": "Unghie", "category": "💈 Cura Personale", "amount": 30.0, "note": ""}, {"id": "ccffc468", "date": "2026-02-14", "month": "2026-02", "person": "her", "negozio": "Farmacia Mascia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 55.9, "note": ""}, {"id": "d586bf16", "date": "2026-02-14", "month": "2026-02", "person": "her", "negozio": "Parrucchiere", "subcategory": "Tintura & Shampo Marzia", "category": "💈 Cura Personale", "amount": 50.0, "note": ""}, {"id": "57b11c61", "date": "2026-02-15", "month": "2026-02", "person": "his", "negozio": "Edenlandia", "subcategory": "Parco Divertimenti", "category": "🎉 Svago & Uscite", "amount": 5.0, "note": "Famiglia"}, {"id": "3a4db2b5", "date": "2026-02-15", "month": "2026-02", "person": "his", "negozio": "Edenlandia", "subcategory": "Parco Divertimenti", "category": "🎉 Svago & Uscite", "amount": 18.0, "note": "Famiglia"}, {"id": "b51b0ffe", "date": "2026-02-15", "month": "2026-02", "person": "his", "negozio": "Edenlandia", "subcategory": "Parco Divertimenti", "category": "🎉 Svago & Uscite", "amount": 62.0, "note": "Famiglia"}, {"id": "3e75ea3e", "date": "2026-02-15", "month": "2026-02", "person": "his", "negozio": "Edenlandia", "subcategory": "Parco Divertimenti", "category": "🎉 Svago & Uscite", "amount": 5.0, "note": "Famiglia"}, {"id": "8a4cd322", "date": "2026-02-15", "month": "2026-02", "person": "his", "negozio": "Edenlandia", "subcategory": "Parco Divertimenti", "category": "🎉 Svago & Uscite", "amount": 20.0, "note": "Famiglia"}, {"id": "bba0337f", "date": "2026-02-15", "month": "2026-02", "person": "his", "negozio": "Edenlandia", "subcategory": "Parco Divertimenti", "category": "🎉 Svago & Uscite", "amount": 2.5, "note": "Famiglia"}, {"id": "a39b1e10", "date": "2026-02-15", "month": "2026-02", "person": "his", "negozio": "Edenlandia", "subcategory": "Parco Divertimenti", "category": "🎉 Svago & Uscite", "amount": 3.9, "note": "Famiglia"}, {"id": "0fd89d2c", "date": "2026-02-16", "month": "2026-02", "person": "his", "negozio": "Scuola Gaia", "subcategory": "Foto Carnevale", "category": "📚 Istruzione", "amount": 10.0, "note": ""}, {"id": "b0b8fb36", "date": "2026-02-16", "month": "2026-02", "person": "his", "negozio": "Luca Veronesi", "subcategory": "Integratori", "category": "💈 Cura Personale", "amount": 59.0, "note": "Proteine"}, {"id": "b5fb0308", "date": "2026-02-16", "month": "2026-02", "person": "his", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 70.0, "note": ""}, {"id": "a129dbf0", "date": "2026-02-17", "month": "2026-02", "person": "her", "negozio": "Tutto Casa", "subcategory": "Casalinghi", "category": "🏠 Casa", "amount": 26.06, "note": ""}, {"id": "fa2f4260", "date": "2026-02-17", "month": "2026-02", "person": "her", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 66.26, "note": ""}, {"id": "df1c4cb0", "date": "2026-02-17", "month": "2026-02", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "eceb89ed", "date": "2026-02-17", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 15.0, "note": ""}, {"id": "6198fe2a", "date": "2026-02-17", "month": "2026-02", "person": "his", "negozio": "Beneficenza", "subcategory": "Beneficenza", "category": "💸 Beneficenza", "amount": 5.0, "note": ""}, {"id": "45f480ee", "date": "2026-02-18", "month": "2026-02", "person": "his", "negozio": "Osteopata Fabio", "subcategory": "Osteopata", "category": "👨‍⚕️ Medici & Visite", "amount": 50.0, "note": ""}, {"id": "0844115a", "date": "2026-02-19", "month": "2026-02", "person": "her", "negozio": "Privalia", "subcategory": "Vestiti Gaia & Gabriele", "category": "👗 Abbigliamento", "amount": 75.94, "note": ""}, {"id": "d1de527b", "date": "2026-02-19", "month": "2026-02", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 60.0, "note": ""}, {"id": "de57b252", "date": "2026-02-19", "month": "2026-02", "person": "his", "negozio": "Barbiere", "subcategory": "Barba e Capelli", "category": "💈 Cura Personale", "amount": 25.0, "note": ""}, {"id": "7fd27305", "date": "2026-02-19", "month": "2026-02", "person": "his", "negozio": "Negozio Schifezze", "subcategory": "Cibo Asporto", "category": "🛒 Spesa Alimentare", "amount": 11.0, "note": ""}, {"id": "a873e242", "date": "2026-02-19", "month": "2026-02", "person": "his", "negozio": "Alaska Nord", "subcategory": "Cibo Asporto", "category": "🎉 Svago & Uscite", "amount": 20.0, "note": ""}, {"id": "fac2ebce", "date": "2026-02-20", "month": "2026-02", "person": "her", "negozio": "Benzinaio", "subcategory": "Benzina Marzia", "category": "🚗 Auto & Trasporti", "amount": 20.0, "note": ""}, {"id": "852dd144", "date": "2026-02-21", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 10.6, "note": ""}, {"id": "d5b9da70", "date": "2026-02-21", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 45.0, "note": "Cena Villaggio delle Rondini"}, {"id": "148216d6", "date": "2026-02-21", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 20.5, "note": "Alfio"}, {"id": "63aa44d8", "date": "2026-02-21", "month": "2026-02", "person": "his", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 10.0, "note": "Libri da Colorare Gaia"}, {"id": "149b0f7f", "date": "2026-02-21", "month": "2026-02", "person": "her", "negozio": "Parrucchiere", "subcategory": "Shampo Marzia", "category": "💈 Cura Personale", "amount": 10.0, "note": ""}, {"id": "4402c5bb", "date": "2026-02-21", "month": "2026-02", "person": "her", "negozio": "Tutto Casa", "subcategory": "Casalinghi", "category": "🏠 Casa", "amount": 13.95, "note": ""}, {"id": "a84555f9", "date": "2026-02-21", "month": "2026-02", "person": "her", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 39.4, "note": ""}, {"id": "37dc3d7e", "date": "2026-02-22", "month": "2026-02", "person": "his", "negozio": "Tennis Tavolo", "subcategory": "Trasferta Tennis Tavolo", "category": "🏋️ Sport & Fitness", "amount": 40.0, "note": "Trasferta Ischia"}, {"id": "e4b0c087", "date": "2026-02-22", "month": "2026-02", "person": "his", "negozio": "Amazon", "subcategory": "Regalo", "category": "🎁 Regali & Cerimonie", "amount": 63.0, "note": "Regalo Trio Cordless"}, {"id": "575a076f", "date": "2026-02-23", "month": "2026-02", "person": "her", "negozio": "Matrimonio Antonella", "subcategory": "Matrimonio", "category": "🎁 Regali & Cerimonie", "amount": 100.0, "note": ""}, {"id": "e52927bc", "date": "2026-02-23", "month": "2026-02", "person": "her", "negozio": "Privalia", "subcategory": "Vestiti Gaia & Gabriele", "category": "👗 Abbigliamento", "amount": 239.91, "note": ""}, {"id": "c054c6fc", "date": "2026-02-23", "month": "2026-02", "person": "his", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 27.6, "note": ""}, {"id": "314e51ce", "date": "2026-02-23", "month": "2026-02", "person": "his", "negozio": "McDonald's", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 16.53, "note": "Pranzo Lavoro"}, {"id": "bfb7d277", "date": "2026-02-23", "month": "2026-02", "person": "her", "negozio": "Negozio Cibo ", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 6.5, "note": "Pranzo Lavoro"}, {"id": "b0cca754", "date": "2026-02-24", "month": "2026-02", "person": "her", "negozio": "Negozio Cibo", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 4.8, "note": "Pranzo Lavoro"}, {"id": "1e9354ba", "date": "2026-02-24", "month": "2026-02", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "4b3fbf0b", "date": "2026-02-24", "month": "2026-02", "person": "his", "negozio": "Negozio Cibo", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 8.0, "note": "Pranzo Lavoro"}, {"id": "4b31e6ee", "date": "2026-02-25", "month": "2026-02", "person": "her", "negozio": "Privalia", "subcategory": "Vestiti Gaia & Gabriele", "category": "👗 Abbigliamento", "amount": 171.91, "note": ""}, {"id": "f2b83aac", "date": "2026-02-25", "month": "2026-02", "person": "his", "negozio": "Pranzo Asporto", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 17.0, "note": ""}, {"id": "5074bea1", "date": "2026-02-25", "month": "2026-02", "person": "her", "negozio": "McDonald's", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 25.6, "note": ""}, {"id": "d0863ef5", "date": "2026-02-26", "month": "2026-02", "person": "her", "negozio": "Benzinaio", "subcategory": "Benzina Marzia", "category": "🚗 Auto & Trasporti", "amount": 20.0, "note": ""}, {"id": "28e72a36", "date": "2026-02-26", "month": "2026-02", "person": "his", "negozio": "Centro Diagnostico Fernicola", "subcategory": "Analisi Fabio", "category": "👨‍⚕️ Medici & Visite", "amount": 14.0, "note": "Analisi Urine Fabio"}, {"id": "60a3a7cb", "date": "2026-02-26", "month": "2026-02", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 20.0, "note": ""}, {"id": "a3feb689", "date": "2026-02-26", "month": "2026-02", "person": "her", "negozio": "Dodeca", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 79.46, "note": ""}, {"id": "4ba50e63", "date": "2026-02-26", "month": "2026-02", "person": "his", "negozio": "Urologo", "subcategory": "Visita Urologo ", "category": "👨‍⚕️ Medici & Visite", "amount": 70.0, "note": "Visita Urologo Fabio"}, {"id": "196a2217", "date": "2026-02-26", "month": "2026-02", "person": "his", "negozio": "Farmacia Mascia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 50.0, "note": ""}, {"id": "135f7116", "date": "2026-02-27", "month": "2026-02", "person": "her", "negozio": "Negozio Cibo", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 8.0, "note": ""}, {"id": "cf47b0db", "date": "2026-02-27", "month": "2026-02", "person": "his", "negozio": "BluKids", "subcategory": "Compleanno", "category": "🎁 Regali & Cerimonie", "amount": 50.0, "note": "Compleanno Niccolò e Matteo"}, {"id": "028871c8", "date": "2026-02-27", "month": "2026-02", "person": "her", "negozio": "Bolletta Luce", "subcategory": "Luce", "category": "💡 Bollette & Utenze", "amount": 158.18, "note": ""}, {"id": "eeea8908", "date": "2026-02-27", "month": "2026-02", "person": "her", "negozio": "Scuola Gaia", "subcategory": "Festa Scolastica", "category": "🎁 Regali & Cerimonie", "amount": 10.0, "note": ""}, {"id": "460a9767", "date": "2026-02-27", "month": "2026-02", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "439f2ec9", "date": "2026-02-28", "month": "2026-02", "person": "her", "negozio": "Negozio Jeans", "subcategory": "Jeans", "category": "👗 Abbigliamento", "amount": 45.98, "note": ""}, {"id": "dd0c8013", "date": "2026-02-28", "month": "2026-02", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 19.0, "note": "Acqua"}, {"id": "4bdf5d44", "date": "2026-02-28", "month": "2026-02", "person": "her", "negozio": "Parrucchiere", "subcategory": "Shampo Marzia & Gaia", "category": "💈 Cura Personale", "amount": 35.0, "note": ""}, {"id": "c2d5fa38", "date": "2026-02-28", "month": "2026-02", "person": "her", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 9.0, "note": ""}, {"id": "2eca156e", "date": "2026-03-01", "month": "2026-03", "person": "his", "negozio": "Farmacia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 6.9, "note": "Sapone intimo Gaia"}, {"id": "3741c882", "date": "2026-03-01", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 3.75, "note": ""}, {"id": "944aebef", "date": "2026-03-02", "month": "2026-03", "person": "her", "negozio": "Cinese", "subcategory": "Cartoleria", "category": "🏠 Casa", "amount": 11.6, "note": ""}, {"id": "9da8a28f", "date": "2026-03-03", "month": "2026-03", "person": "his", "negozio": "Scuola Gaia", "subcategory": "Retta", "category": "📚 Istruzione", "amount": 232.0, "note": "Scuola e Danza"}, {"id": "8fd0e2ac", "date": "2026-03-03", "month": "2026-03", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "725fba39", "date": "2026-03-03", "month": "2026-03", "person": "her", "negozio": "Farmacia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 7.9, "note": ""}, {"id": "730c4ec1", "date": "2026-03-03", "month": "2026-03", "person": "his", "negozio": "Life120", "subcategory": "Integratori", "category": "🩺 Farmacia", "amount": 50.0, "note": "Integratori Fabio"}, {"id": "69363678", "date": "2026-03-03", "month": "2026-03", "person": "his", "negozio": "Tennis Tavolo", "subcategory": "Abbonamento", "category": "🏋️ Sport & Fitness", "amount": 40.0, "note": "Ping Pong Fabio Marzo"}, {"id": "972f9cbc", "date": "2026-03-04", "month": "2026-03", "person": "her", "negozio": "Scuola Gaia", "subcategory": "Fondo Cassa Scuola Gaia", "category": "📚 Istruzione", "amount": 10.0, "note": ""}, {"id": "cf0874d5", "date": "2026-03-04", "month": "2026-03", "person": "her", "negozio": "Negozio Cibo", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 7.7, "note": "Pranzo Lavoro"}, {"id": "400b42ae", "date": "2026-03-04", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 13.0, "note": ""}, {"id": "c6efbf90", "date": "2026-03-05", "month": "2026-03", "person": "her", "negozio": "Benzinaio", "subcategory": "Benzina Marzia", "category": "🚗 Auto & Trasporti", "amount": 20.0, "note": ""}, {"id": "6b954fbb", "date": "2026-03-06", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 7.0, "note": ""}, {"id": "ba00b79c", "date": "2026-03-06", "month": "2026-03", "person": "his", "negozio": "McDonald's", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 10.0, "note": "Pranzo Lavoro"}, {"id": "cb60b549", "date": "2026-03-06", "month": "2026-03", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "c46ac3a9", "date": "2026-03-06", "month": "2026-03", "person": "his", "negozio": "Scuola Gaia", "subcategory": "Gita", "category": "📚 Istruzione", "amount": 35.0, "note": "Gaia"}, {"id": "55816184", "date": "2026-03-06", "month": "2026-03", "person": "her", "negozio": "Dodeca", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 94.98, "note": ""}, {"id": "8c145b43", "date": "2026-03-06", "month": "2026-03", "person": "her", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 33.67, "note": "Gabriele"}, {"id": "6791ecdf", "date": "2026-03-06", "month": "2026-03", "person": "his", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 49.0, "note": ""}, {"id": "fa2ed907", "date": "2026-03-07", "month": "2026-03", "person": "her", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 9.88, "note": "Gabriele"}, {"id": "b1aa3585", "date": "2026-03-07", "month": "2026-03", "person": "his", "negozio": "Luca Veronesi", "subcategory": "Integratori", "category": "🩺 Farmacia", "amount": 278.19, "note": "Integratori Fabio"}, {"id": "7733f860", "date": "2026-03-07", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 57.2, "note": ""}, {"id": "cf72b2bb", "date": "2026-03-07", "month": "2026-03", "person": "his", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 10.0, "note": "Gaia"}, {"id": "526572e4", "date": "2026-03-07", "month": "2026-03", "person": "her", "negozio": "Lorenza", "subcategory": "Shampo Marzia", "category": "💈 Cura Personale", "amount": 10.0, "note": ""}, {"id": "71f62821", "date": "2026-03-07", "month": "2026-03", "person": "her", "negozio": "Cinese", "subcategory": "Cartoleria", "category": "🏠 Casa", "amount": 6.9, "note": ""}, {"id": "8dd5a803", "date": "2026-03-07", "month": "2026-03", "person": "her", "negozio": "Tutto Casa", "subcategory": "Casalinghi", "category": "🏠 Casa", "amount": 29.5, "note": ""}, {"id": "2eb7d40c", "date": "2026-03-07", "month": "2026-03", "person": "her", "negozio": "Negozio", "subcategory": "Regali Pasquali", "category": "🎁 Regali & Cerimonie", "amount": 13.0, "note": "Uovo di Pasqua Gaia"}, {"id": "660ec5e7", "date": "2026-03-07", "month": "2026-03", "person": "her", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 61.8, "note": ""}, {"id": "ebf24d1f", "date": "2026-03-07", "month": "2026-03", "person": "his", "negozio": "Farmacia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 12.5, "note": ""}, {"id": "57c3090c", "date": "2026-03-08", "month": "2026-03", "person": "her", "negozio": "Scuola Gaia", "subcategory": "Festa Scolastica", "category": "🎁 Regali & Cerimonie", "amount": 10.0, "note": ""}, {"id": "b466cb76", "date": "2026-03-08", "month": "2026-03", "person": "his", "negozio": "Farmacia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 12.5, "note": ""}, {"id": "93ab9d69", "date": "2026-03-08", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 13.85, "note": ""}, {"id": "61a41b42", "date": "2026-03-08", "month": "2026-03", "person": "his", "negozio": "AliExpress", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 58.0, "note": "Gaia"}, {"id": "fe130b52", "date": "2026-03-09", "month": "2026-03", "person": "her", "negozio": "Centro Estetico", "subcategory": "Unghie", "category": "💈 Cura Personale", "amount": 30.0, "note": ""}, {"id": "f44cde29", "date": "2026-03-09", "month": "2026-03", "person": "her", "negozio": "Farmacia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 9.78, "note": ""}, {"id": "2f00153f", "date": "2026-03-09", "month": "2026-03", "person": "her", "negozio": "Fotografo", "subcategory": "Fotografo", "category": "🎭 Intrattenimento", "amount": 85.0, "note": "Famiglia"}, {"id": "32df7f8e", "date": "2026-03-09", "month": "2026-03", "person": "her", "negozio": "Scuola Gaia", "subcategory": "Festa Scolastica", "category": "🎁 Regali & Cerimonie", "amount": 10.0, "note": ""}, {"id": "bc0360d5", "date": "2026-03-09", "month": "2026-03", "person": "his", "negozio": "Farmacia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 10.5, "note": ""}, {"id": "172572ed", "date": "2026-03-09", "month": "2026-03", "person": "his", "negozio": "Autofficina", "subcategory": "Manutenzione", "category": "🚗 Auto & Trasporti", "amount": 15.0, "note": "Bucatura Ruota Marzia"}, {"id": "e2b53008", "date": "2026-03-10", "month": "2026-03", "person": "her", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 8.0, "note": ""}, {"id": "e447e046", "date": "2026-03-10", "month": "2026-03", "person": "her", "negozio": "Negozio Cibo", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 9.5, "note": "Pranzo Lavoro"}, {"id": "7c148bd2", "date": "2026-03-10", "month": "2026-03", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "b94c1f04", "date": "2026-03-10", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 12.8, "note": ""}, {"id": "fea06f52", "date": "2026-03-11", "month": "2026-03", "person": "her", "negozio": "Benzinaio", "subcategory": "Benzina Marzia", "category": "🚗 Auto & Trasporti", "amount": 20.0, "note": ""}, {"id": "e8c70150", "date": "2026-03-12", "month": "2026-03", "person": "his", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 43.97, "note": "Giochi Gaia"}, {"id": "631228d1", "date": "2026-03-12", "month": "2026-03", "person": "her", "negozio": "Negozio Jeans", "subcategory": "Jeans", "category": "👗 Abbigliamento", "amount": 45.98, "note": "Pantaloni Marzia"}, {"id": "10ef3958", "date": "2026-03-13", "month": "2026-03", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "03538a06", "date": "2026-03-13", "month": "2026-03", "person": "his", "negozio": "Scuola Gabriele", "subcategory": "Retta", "category": "📚 Istruzione", "amount": 250.0, "note": "Aprile"}, {"id": "e3951d58", "date": "2026-03-13", "month": "2026-03", "person": "his", "negozio": "Barbiere", "subcategory": "Barba e Capelli", "category": "💈 Cura Personale", "amount": 25.0, "note": "Fabio"}, {"id": "ed02405a", "date": "2026-03-13", "month": "2026-03", "person": "his", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 18.0, "note": ""}, {"id": "0326f999", "date": "2026-03-13", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 13.0, "note": ""}, {"id": "fa10fad3", "date": "2026-03-14", "month": "2026-03", "person": "her", "negozio": "Negozio Scarpe", "subcategory": "Scarpe", "category": "👗 Abbigliamento", "amount": 61.97, "note": "Bambini"}, {"id": "83f973b2", "date": "2026-03-14", "month": "2026-03", "person": "her", "negozio": "Bolletta Gas", "subcategory": "Gas", "category": "💡 Bollette & Utenze", "amount": 160.42, "note": "scadenza 18/03/2026"}, {"id": "4be676b8", "date": "2026-03-14", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 40.6, "note": ""}, {"id": "ad6d5ef2", "date": "2026-03-14", "month": "2026-03", "person": "her", "negozio": "Negozio Online", "subcategory": "Decoro Casa", "category": "🏠 Casa", "amount": 53.54, "note": "Vaso + Fiori + Runner"}, {"id": "d118c3ea", "date": "2026-03-14", "month": "2026-03", "person": "her", "negozio": "Negozio", "subcategory": "Compleanno", "category": "🎁 Regali & Cerimonie", "amount": 34.95, "note": "Regalo Nonno Antonio"}, {"id": "c3248287", "date": "2026-03-14", "month": "2026-03", "person": "her", "negozio": "Lorenza", "subcategory": "Tintura & Shampo Marzia", "category": "💈 Cura Personale", "amount": 50.0, "note": ""}, {"id": "9c02b8ed", "date": "2026-03-14", "month": "2026-03", "person": "her", "negozio": "Tutto Casa", "subcategory": "Casalinghi", "category": "🏠 Casa", "amount": 31.2, "note": ""}, {"id": "5c50a674", "date": "2026-03-14", "month": "2026-03", "person": "his", "negozio": "McDonald's", "subcategory": "Fast Food", "category": "🍽️ Fuori Casa", "amount": 52.0, "note": "Famiglia"}, {"id": "7a03aaaa", "date": "2026-03-16", "month": "2026-03", "person": "her", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 17.58, "note": "Gabriele"}, {"id": "2dae2028", "date": "2026-03-16", "month": "2026-03", "person": "his", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 24.5, "note": "Porta asciugacapelli Gaia"}, {"id": "3cae086a", "date": "2026-03-16", "month": "2026-03", "person": "his", "negozio": "Amazon", "subcategory": "Abbigliamento Intimo", "category": "🩲 Abbigliamento Intimo", "amount": 12.0, "note": "Organizer Mutande Fabio"}, {"id": "130e4016", "date": "2026-03-17", "month": "2026-03", "person": "her", "negozio": "Benzinaio", "subcategory": "Benzina Marzia", "category": "🚗 Auto & Trasporti", "amount": 20.0, "note": ""}, {"id": "e342b4f4", "date": "2026-03-17", "month": "2026-03", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "564c9b4f", "date": "2026-03-17", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 28.0, "note": ""}, {"id": "e219d9b5", "date": "2026-03-17", "month": "2026-03", "person": "his", "negozio": "Charlie Pub", "subcategory": "Pub", "category": "🎉 Svago & Uscite", "amount": 25.0, "note": ""}, {"id": "57017393", "date": "2026-03-18", "month": "2026-03", "person": "his", "negozio": "Cartoleria", "subcategory": "Materiale Scolastico", "category": "📚 Istruzione", "amount": 14.8, "note": "Gabriele"}, {"id": "a8104fdb", "date": "2026-03-18", "month": "2026-03", "person": "his", "negozio": "Cartoleria", "subcategory": "Materiale Scolastico", "category": "📚 Istruzione", "amount": 8.4, "note": "Gabriele"}, {"id": "40ae8480", "date": "2026-03-18", "month": "2026-03", "person": "his", "negozio": "Farmasanitaria Babyland", "subcategory": "Prima Infanzia", "category": "🏥 Farmasanitaria", "amount": 121.0, "note": ""}, {"id": "0375041f", "date": "2026-03-18", "month": "2026-03", "person": "his", "negozio": "Tutto Casa", "subcategory": "Casalinghi", "category": "🏠 Casa", "amount": 6.5, "note": "Gabriele"}, {"id": "42bba072", "date": "2026-03-18", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 9.45, "note": ""}, {"id": "a1b1dcf4", "date": "2026-03-18", "month": "2026-03", "person": "his", "negozio": "Polleria", "subcategory": "Cibo Asporto", "category": "🥡 Asporto", "amount": 22.0, "note": "Re del Pollo"}, {"id": "42f36f0b", "date": "2026-03-18", "month": "2026-03", "person": "his", "negozio": "Coppola Pigna", "subcategory": "Manutenzione Casa", "category": "🏠 Casa", "amount": 340.0, "note": "Barbecue a Gas"}, {"id": "ce0b6e80", "date": "2026-03-19", "month": "2026-03", "person": "her", "negozio": "Amazon", "subcategory": "Casalinghi", "category": "🏠 Casa", "amount": 20.99, "note": ""}, {"id": "3c8debc2", "date": "2026-03-19", "month": "2026-03", "person": "his", "negozio": "Scuola Gabriele", "subcategory": "Retta", "category": "📚 Istruzione", "amount": 200.0, "note": "Iscrizione 2026/2027"}, {"id": "e0d4610e", "date": "2026-03-19", "month": "2026-03", "person": "his", "negozio": "Negozio", "subcategory": "Abbigliamento", "category": "👗 Abbigliamento", "amount": 35.0, "note": "Tuta Scuola Gabriele"}, {"id": "f980f99a", "date": "2026-03-20", "month": "2026-03", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "e770e29d", "date": "2026-03-20", "month": "2026-03", "person": "his", "negozio": "Alaska Nord", "subcategory": "Pub", "category": "🎉 Svago & Uscite", "amount": 25.0, "note": ""}, {"id": "6ff74af2", "date": "2026-03-21", "month": "2026-03", "person": "her", "negozio": "Lorenza", "subcategory": "Shampo Marzia", "category": "💈 Cura Personale", "amount": 10.0, "note": ""}, {"id": "bdbd84c7", "date": "2026-03-21", "month": "2026-03", "person": "her", "negozio": "Farmacia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 19.0, "note": ""}, {"id": "363a8360", "date": "2026-03-21", "month": "2026-03", "person": "her", "negozio": "Tutto Casa", "subcategory": "Casalinghi", "category": "🏠 Casa", "amount": 16.5, "note": ""}, {"id": "7b551199", "date": "2026-03-21", "month": "2026-03", "person": "her", "negozio": "Decò", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 61.25, "note": ""}, {"id": "e9866b88", "date": "2026-03-21", "month": "2026-03", "person": "his", "negozio": "Ferramenta", "subcategory": "Manutenzione Casa", "category": "🏠 Casa", "amount": 28.0, "note": "Bombola Gas"}, {"id": "8135e8c7", "date": "2026-03-21", "month": "2026-03", "person": "his", "negozio": "Ferramenta", "subcategory": "Manutenzione Casa", "category": "🏠 Casa", "amount": 7.0, "note": ""}, {"id": "9fb2a32f", "date": "2026-03-21", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 80.5, "note": "Cena Amici"}, {"id": "cd0843ab", "date": "2026-03-22", "month": "2026-03", "person": "his", "negozio": "Edenlandia", "subcategory": "Parco Divertimenti", "category": "🎉 Svago & Uscite", "amount": 20.0, "note": "Giostre Gaia"}, {"id": "48c4c372", "date": "2026-03-22", "month": "2026-03", "person": "his", "negozio": "Bar", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 2.5, "note": ""}, {"id": "a669c4e1", "date": "2026-03-23", "month": "2026-03", "person": "his", "negozio": "Farmacia", "subcategory": "Farmaci", "category": "🩺 Farmacia", "amount": 10.4, "note": ""}, {"id": "d5246e1d", "date": "2026-03-23", "month": "2026-03", "person": "his", "negozio": "Benzinaio", "subcategory": "Benzina Marzia", "category": "🚗 Auto & Trasporti", "amount": 20.0, "note": ""}, {"id": "fc5738c3", "date": "2026-03-23", "month": "2026-03", "person": "her", "negozio": "Dodeca", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 49.78, "note": ""}, {"id": "c6e43f59", "date": "2026-03-23", "month": "2026-03", "person": "her", "negozio": "Anna Estetista", "subcategory": "Ceretta", "category": "💈 Cura Personale", "amount": 49.0, "note": "Ceretta + Piedi"}, {"id": "97591747", "date": "2026-03-24", "month": "2026-03", "person": "her", "negozio": "Dodeca", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 48.07, "note": ""}, {"id": "8e78f4c4", "date": "2026-03-24", "month": "2026-03", "person": "his", "negozio": "Lucia", "subcategory": "Colf", "category": "🏠 Supporto Domestico", "amount": 40.0, "note": ""}, {"id": "698be0fd", "date": "2026-03-24", "month": "2026-03", "person": "his", "negozio": "Amazon", "subcategory": "Giochi & Svago", "category": "👶 Figli", "amount": 19.0, "note": "Gaia"}, {"id": "0f705f87", "date": "2026-03-24", "month": "2026-03", "person": "her", "negozio": "Negozio", "subcategory": "Compleanno", "category": "🎁 Regali & Cerimonie", "amount": 5.0, "note": "Regalo amica Gabriele"}, {"id": "57bac196", "date": "2026-03-24", "month": "2026-03", "person": "her", "negozio": "Scuola Gabriele", "subcategory": "Materiale Scolastico", "category": "📚 Istruzione", "amount": 3.0, "note": "Lavoretto Pasqua Gabriele"}, {"id": "78b0d52f", "date": "2026-03-24", "month": "2026-03", "person": "her", "negozio": "Scuola Gaia", "subcategory": "Festa Scolastica", "category": "🎁 Regali & Cerimonie", "amount": 10.0, "note": "Regalo amica Gaia"}, {"id": "da6ab0c9", "date": "2026-03-25", "month": "2026-03", "person": "his", "negozio": "Tennis Tavolo", "subcategory": "Torneo", "category": "🏋️ Sport & Fitness", "amount": 20.0, "note": "Torneo Ping Pong"}, {"id": "1b746663", "date": "2026-03-25", "month": "2026-03", "person": "his", "negozio": "Tennis Tavolo", "subcategory": "Abbonamento", "category": "🏋️ Sport & Fitness", "amount": 40.0, "note": "Mensile Aprile"}, {"id": "15680ea1", "date": "2026-03-25", "month": "2026-03", "person": "her", "negozio": "Negozio Cibo", "subcategory": "Cibo Asporto", "category": "🍽️ Fuori Casa", "amount": 3.49, "note": "Pranzo Lavoro"}, {"id": "e0528395", "date": "2026-03-26", "month": "2026-03", "person": "her", "negozio": "Scuola Gaia", "subcategory": "Festa Scolastica", "category": "🎁 Regali & Cerimonie", "amount": 10.0, "note": "Acconto festa fine anno Gaia"}, {"id": "680f48a2", "date": "2026-03-26", "month": "2026-03", "person": "his", "negozio": "Conad", "subcategory": "Supermercato", "category": "🛒 Spesa Alimentare", "amount": 15.4, "note": ""}, {"id": "01083221", "date": "2026-03-26", "month": "2026-03", "person": "his", "negozio": "Pediatra", "subcategory": "Visita Gaia e Gabriele", "category": "👨‍⚕️ Medici & Visite", "amount": 160.0, "note": "Pediatra Gaia e Gabriele"}];
+let categories = ["🍽️ Fuori Casa", "🎁 Regali & Cerimonie", "🎉 Svago & Uscite", "🎭 Intrattenimento", "🏋️ Sport & Fitness", "🏠 Casa", "🏠 Supporto Domestico", "🏥 Farmasanitaria", "🏦 Tasse & Burocrazia", "👗 Abbigliamento", "👨‍⚕️ Medici & Visite", "👶 Figli", "💈 Cura Personale", "💡 Bollette & Utenze", "💸 Beneficenza", "📚 Istruzione", "🚗 Auto & Trasporti", "🛒 Spesa Alimentare", "🥡 Asporto", "🩲 Abbigliamento Intimo", "🩺 Farmacia"];
+let subcategories = ["Abbigliamento", "Abbigliamento Intimo", "Abbonamento", "Analisi Fabio", "Assicurazione", "Barba e Capelli", "Beneficenza", "Benzina Marzia", "Cartoleria", "Casalinghi", "Ceretta", "Cibo Asporto", "Colf", "Compleanno", "Decoro Casa", "Farmaci", "Fast Food", "Festa Scolastica", "Fondo Cassa Scuola Gaia", "Foto Carnevale", "Fotografo", "Gas", "Giochi & Svago", "Gita", "Integratori", "Jeans", "Luce", "Manutenzione", "Manutenzione Casa", "Materiale Scolastico", "Matrimonio", "Osteopata", "Parco Divertimenti", "Prima Infanzia", "Pub", "Regali Pasquali", "Regalo", "Retta", "Scarpe", "Shampo Marzia", "Shampo Marzia & Gaia", "Supermercato", "Tintura & Shampo Marzia", "Torneo", "Trasferta Tennis Tavolo", "Unghie", "Vestiti Gaia & Gabriele", "Visita Gaia e Gabriele", "Visita Urologo"];
+let negozi = ["Alaska Nord", "AliExpress", "Amazon", "Anna Estetista", "Assicurazione Scuola", "Autofficina", "Bar", "Barbiere", "Beneficenza", "Benzinaio", "BluKids", "Bolletta Gas", "Bolletta Luce", "Cartoleria", "Centro Diagnostico Fernicola", "Centro Estetico", "Charlie Pub", "Cinese", "Conad", "Coppola Pigna", "Decò", "Dodeca", "Edenlandia", "EnzoLed", "Farmacia", "Farmacia Mascia", "Farmasanitaria Babyland", "Ferramenta", "Fotografo", "Life120", "Lorenza", "Luca Veronesi", "Lucia", "Matrimonio Antonella", "McDonald's", "Negozio", "Negozio Cibo", "Negozio Jeans", "Negozio Online", "Negozio Scarpe", "Negozio Schifezze", "Negozio Surgelati", "Osteopata Fabio", "Palestra Snellife", "Parrucchiere", "Pediatra", "Polleria", "Pranzo Asporto", "Privalia", "Scuola Danza", "Scuola Gabriele", "Scuola Gaia", "Tennis Tavolo", "Tutto Casa", "Urologo"];
+let budgets = {};
+let statFilters = {chi:'tutti'};
+let listFilters = {chi:'tutti'};
+let editingId = null;
+let selectedPerson = 'his';
+let editPerson = 'his';
+let chartMensile = null, chartCat = null;
+
+// PASSWORD
+function checkPw() {
+  const v = document.getElementById('pwInput').value;
+  if (v === PASSWORD) {
+    const remember = document.getElementById('rememberMe').checked;
+    if(remember) localStorage.setItem('speseCoppiaAuth', 'true');
+    document.getElementById('pwScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    init();
+  } else {
+    document.getElementById('pwErr').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    setTimeout(() => document.getElementById('pwErr').style.display = 'none', 2500);
+  }
+}
+document.getElementById('pwInput').addEventListener('keydown', e => { if(e.key==='Enter') checkPw(); });
+
+// Auto-login se già autenticato
+(function() {
+  if(localStorage.getItem('speseCoppiaAuth') === 'true') {
+    document.getElementById('pwScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    init();
+  }
+})();
+
+// INIT
+function init() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('inpDate').value = today;
+  loadBudgets();
+  buildDataLists();
+  buildFilters();
+  buildExportFilters();
+  renderDashboard();
+  renderStats();
+  renderSpese();
+  renderBudget();
+  setSyncStatus('ok');
+  // Load from cloud
+  loadFromCloud();
+}
+
+function setSyncStatus(s) {
+  const p = document.getElementById('syncPill');
+  const t = document.getElementById('syncTxt');
+  p.className = 'sync-pill ' + (s==='ok'?'ok':s==='err'?'err':'loading');
+  t.textContent = s==='ok'?'Sincronizzato':s==='err'?'Errore':'Sync...';
+  if(s==='loading') p.className += ' loading';
+}
+
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 2800);
+}
+
+// NAVIGATION
+function goPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  renderPage(name);
+}
+function goPageMobile(name, idx) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('bn' + idx).classList.add('active');
+  renderPage(name);
+}
+function renderPage(name) {
+  if(name==='dashboard') renderDashboard();
+  if(name==='statistiche') renderStats();
+  if(name==='spese') renderSpese();
+  if(name==='impostazioni') { renderBudget(); renderGVList(); initNotifyUI(); }
+}
+
+function getFiltered(opts={chi:'tutti',mese:'',search:'',cat:'',sub:'',neg:''}) {
+  return allExpenses.filter(e => {
+    if(opts.chi && opts.chi!=='tutti' && e.person!==opts.chi) return false;
+    if(opts.mese && e.month!==opts.mese) return false;
+    if(opts.cat && e.category!==opts.cat) return false;
+    if(opts.sub && e.subcategory!==opts.sub) return false;
+    if(opts.neg && e.negozio!==opts.neg) return false;
+    if(opts.search) {
+      const q=opts.search.toLowerCase();
+      if(!(e.negozio||'').toLowerCase().includes(q) &&
+         !(e.category||'').toLowerCase().includes(q) &&
+         !(e.subcategory||'').toLowerCase().includes(q) &&
+         !(e.note||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function buildFilters() {
+  const cats = [...new Set(allExpenses.map(e=>e.category).filter(Boolean))].sort();
+  const subs = [...new Set(allExpenses.map(e=>e.subcategory).filter(Boolean))].sort();
+  const negs = [...new Set(allExpenses.map(e=>e.negozio).filter(Boolean))].sort();
+  const months = [...new Set(allExpenses.map(e=>e.month).filter(Boolean))].sort();
+  const catSel = document.getElementById('listCat');
+  if(catSel) catSel.innerHTML = '<option value="">Tutte le categorie</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const subSel = document.getElementById('listSub');
+  if(subSel) subSel.innerHTML = '<option value="">Tutte le sottocategorie</option>' + subs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  const negSel = document.getElementById('listNeg');
+  if(negSel) negSel.innerHTML = '<option value="">Tutti i negozi</option>' + negs.map(n=>`<option value="${n}">${n}</option>`).join('');
+  ['dashMonth','statMonth','listMonth'].forEach(id => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Tutti i mesi</option>' + months.map(m=>`<option value="${m}">${formatMonth(m)}</option>`).join('');
+    if(cur) sel.value = cur;
+  });
+}
+
+function renderDashboard() {
+  const mese = document.getElementById('dashMonth')?.value || '';
+  const data = getFiltered({mese});
+  const tot = data.reduce((a,b)=>a+b.amount,0);
+  const his = data.filter(e=>e.person==='his').reduce((a,b)=>a+b.amount,0);
+  const her = data.filter(e=>e.person==='her').reduce((a,b)=>a+b.amount,0);
+  const statsEl = document.getElementById('dashStats');
+  if(statsEl) statsEl.innerHTML = `
+    <div class="stat-box tot"><div class="stat-lbl">Totale</div><div class="stat-val">€${tot.toFixed(0)}</div><div class="stat-sub">${data.length} spese</div></div>
+    <div class="stat-box his"><div class="stat-lbl">Fabio</div><div class="stat-val">€${his.toFixed(0)}</div><div class="stat-sub">${data.filter(e=>e.person==='his').length} spese</div></div>
+    <div class="stat-box her"><div class="stat-lbl">Marzia</div><div class="stat-val">€${her.toFixed(0)}</div><div class="stat-sub">${data.filter(e=>e.person==='her').length} spese</div></div>
+  `;
+  const feb = allExpenses.filter(e=>e.month==='2026-02');
+  const mar = allExpenses.filter(e=>e.month==='2026-03');
+  const sumFeb = feb.reduce((a,b)=>a+b.amount,0);
+  const sumMar = mar.reduce((a,b)=>a+b.amount,0);
+  const diff = sumMar-sumFeb;
+  const diffPct = sumFeb>0?((diff/sumFeb)*100).toFixed(0):0;
+  const trendClass = diff>0?'trend-up':'trend-down';
+  const trendIcon = diff>0?'↑':'↓';
+  const monthsEl = document.getElementById('dashMonths');
+  if(monthsEl && !mese) {
+    monthsEl.innerHTML = `
+      <div class="month-card"><div class="month-title">📅 Febbraio 2026</div><div class="month-total">€${sumFeb.toFixed(2)}</div>
+        <div class="month-row"><span style="color:var(--his)">Fabio</span><span style="color:var(--his);font-weight:600">€${feb.filter(e=>e.person==='his').reduce((a,b)=>a+b.amount,0).toFixed(2)}</span></div>
+        <div class="month-row"><span style="color:var(--her)">Marzia</span><span style="color:var(--her);font-weight:600">€${feb.filter(e=>e.person==='her').reduce((a,b)=>a+b.amount,0).toFixed(2)}</span></div>
+        <div class="month-row" style="margin-top:4px"><span style="font-size:11px;color:var(--text3)">${feb.length} spese</span></div></div>
+      <div class="month-card"><div class="month-title">📅 Marzo 2026 <span class="${trendClass}">${trendIcon} ${Math.abs(diffPct)}%</span></div><div class="month-total">€${sumMar.toFixed(2)}</div>
+        <div class="month-row"><span style="color:var(--his)">Fabio</span><span style="color:var(--his);font-weight:600">€${mar.filter(e=>e.person==='his').reduce((a,b)=>a+b.amount,0).toFixed(2)}</span></div>
+        <div class="month-row"><span style="color:var(--her)">Marzia</span><span style="color:var(--her);font-weight:600">€${mar.filter(e=>e.person==='her').reduce((a,b)=>a+b.amount,0).toFixed(2)}</span></div>
+        <div class="month-row" style="margin-top:4px"><span style="font-size:11px;color:var(--text3)">${mar.length} spese</span></div></div>
+    `;
+  } else if(monthsEl) { monthsEl.innerHTML = ''; }
+  // Chart mensile
+  const allMonths = [...new Set(allExpenses.map(e=>e.month))].sort();
+  const monthLabels = allMonths.map(m=>formatMonth(m));
+  const hisDat = allMonths.map(m=>allExpenses.filter(e=>e.month===m&&e.person==='his').reduce((a,b)=>a+b.amount,0));
+  const herDat = allMonths.map(m=>allExpenses.filter(e=>e.month===m&&e.person==='her').reduce((a,b)=>a+b.amount,0));
+  if(chartMensile) chartMensile.destroy();
+  const ctx1 = document.getElementById('chartMensile');
+  if(ctx1) { chartMensile = new Chart(ctx1.getContext('2d'), {type:'bar',data:{labels:monthLabels,datasets:[{label:'Fabio',data:hisDat,backgroundColor:'rgba(0,122,255,0.7)',borderRadius:8},{label:'Marzia',data:herDat,backgroundColor:'rgba(255,45,120,0.7)',borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}}); }
+}
+
+function renderStats() {
+  const mese = document.getElementById('statMonth')?.value || '';
+  const chi = statFilters.chi;
+  const data = getFiltered({chi, mese});
+  const bycat = {};
+  data.forEach(e=>{ bycat[e.category]=(bycat[e.category]||0)+e.amount; });
+  const catEntries = Object.entries(bycat).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(chartCat) chartCat.destroy();
+  const ctx2 = document.getElementById('chartCat');
+  if(ctx2) {
+    const colors = ['#007AFF','#FF2D78','#34C759','#FF9500','#AF52DE','#5AC8FA','#FF6B6B','#4ECDC4'];
+    chartCat = new Chart(ctx2.getContext('2d'), {type:'doughnut',data:{labels:catEntries.map(([k])=>k),datasets:[{data:catEntries.map(([,v])=>v),backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}}});
+  }
+  const byshop = {};
+  data.forEach(e=>{ if(e.negozio) byshop[e.negozio]=(byshop[e.negozio]||0)+e.amount; });
+  const shops = Object.entries(byshop).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const maxShop = shops[0]?shops[0][1]:1;
+  const shopsEl = document.getElementById('topShops');
+  if(shopsEl) shopsEl.innerHTML = shops.map(([n,v],i)=>`<div class="shop-item"><div class="shop-rank">${i+1}</div><div class="shop-name">${n}</div><div class="shop-bar-wrap"><div class="shop-bar" style="width:${Math.round(v/maxShop*100)}%"></div></div><div class="shop-val">€${v.toFixed(2)}</div></div>`).join('');
+  renderCatList(data, 'statCats');
+}
+
+function renderCatList(data, containerId) {
+  const bycat = {};
+  data.forEach(e => {
+    if(!bycat[e.category]) bycat[e.category]={tot:0,his:0,her:0};
+    bycat[e.category].tot+=e.amount;
+    if(e.person==='his') bycat[e.category].his+=e.amount;
+    else bycat[e.category].her+=e.amount;
+  });
+  const sorted = Object.entries(bycat).sort((a,b)=>b[1].tot-a[1].tot);
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = sorted.map(([cat,v]) => {
+    const pf = v.tot>0?Math.round(v.his/v.tot*100):0;
+    const pm = 100-pf;
+    const barHtml = v.his>0&&v.her>0
+      ? `<div class="bar-his" style="width:${pf}%"></div><div class="bar-her" style="width:${pm}%"></div>`
+      : v.his>0 ? `<div class="bar-his bar-only" style="width:100%"></div>`
+      : `<div class="bar-her bar-only" style="width:100%"></div>`;
+    return `<div class="cat-item"><div class="cat-head"><span class="cat-name">${cat}</span><span class="cat-tot">€${v.tot.toFixed(2)}</span></div><div class="cat-bar">${barHtml}</div><div class="cat-leg">${v.his>0?`<span class="his">🔵 Fabio €${v.his.toFixed(2)} (${pf}%)</span>`:''}${v.her>0?`<span class="her">🩷 Marzia €${v.her.toFixed(2)} (${pm}%)</span>`:''}</div></div>`;
+  }).join('');
+}
+
+function renderSpese() {
+  const search = document.getElementById('searchInput')?.value || '';
+  const mese = document.getElementById('listMonth')?.value || '';
+  const cat = document.getElementById('listCat')?.value || '';
+  const sub = document.getElementById('listSub')?.value || '';
+  const neg = document.getElementById('listNeg')?.value || '';
+  const chi = listFilters.chi;
+  const data = getFiltered({chi,mese,search,cat,sub,neg}).sort((a,b)=>(b.date||"").substring(0,10).localeCompare((a.date||"").substring(0,10)));
+  const tot = data.reduce((a,b)=>a+b.amount,0);
+  const countEl = document.getElementById('speseCount');
+  const totEl = document.getElementById('speseTotal');
+  if(countEl) countEl.textContent = data.length;
+  if(totEl) totEl.textContent = '€'+tot.toFixed(2);
+  const listEl = document.getElementById('speseList');
+  if(!listEl) return;
+  if(!data.length) { listEl.innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><div>Nessuna spesa trovata</div></div>'; return; }
+  listEl.innerHTML = data.map(e => {
+    const d = e.date.split('-'); const dd = d[2]+'/'+d[1];
+    return `<div class="spesa-row ${e.person}" onclick="openEdit('${e.id}')"><span class="spesa-date">${dd}</span><span class="spesa-badge ${e.person}">${e.person==='his'?'Fabio':'Marzia'}</span><div><div class="spesa-neg">${e.negozio||'-'}</div>${e.note?`<div class="spesa-note">${e.note}</div>`:''}</div><span class="spesa-sub">${e.subcategory||e.category||''}</span><span class="spesa-amt ${e.person}">€${parseFloat(e.amount).toFixed(2)}</span></div>`;
+  }).join('');
+}
+
+function setStatFilter(key, val, btn) {
+  statFilters[key]=val;
+  document.querySelectorAll('#page-statistiche .filter-chip').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderStats();
+}
+
+function setListFilter(key, val, btn) {
+  listFilters[key]=val;
+  document.querySelectorAll('#page-spese .filter-chip').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderSpese();
+}
+
+// DATA LISTS
+// SEARCHABLE DROPDOWN ENGINE
+const sdConfig = {
+  neg: { inputId:'sdNeg', hiddenId:'inpNegozio', dropId:'sdNeg-dropdown', getList:()=>[...new Set(allExpenses.map(e=>e.negozio).filter(Boolean))].sort() },
+  sub: { inputId:'sdSub', hiddenId:'inpSubcat',  dropId:'sdSub-dropdown', getList:()=>[...new Set(allExpenses.map(e=>e.subcategory).filter(Boolean))].sort() },
+  cat: { inputId:'sdCat', hiddenId:'inpCat',     dropId:'sdCat-dropdown', getList:()=>[...new Set(allExpenses.map(e=>e.category).filter(Boolean))].sort() },
+};
+let sdTimers = {};
+
+function sdFilter(key) {
+  const cfg = sdConfig[key];
+  const q = document.getElementById(cfg.inputId).value.toLowerCase();
+  const all = cfg.getList();
+  const filtered = q ? all.filter(v => v.toLowerCase().includes(q)) : all;
+  sdRenderDrop(key, filtered, q);
+  sdOpenDrop(key);
+  document.getElementById(cfg.hiddenId).value = '';
+  if(key==='neg') clearAutofill();
+}
+
+function sdOpen(key) {
+  const cfg = sdConfig[key];
+  const q = document.getElementById(cfg.inputId).value.toLowerCase();
+  const all = cfg.getList();
+  const filtered = q ? all.filter(v => v.toLowerCase().includes(q)) : all;
+  sdRenderDrop(key, filtered, q);
+  sdOpenDrop(key);
+}
+
+function sdOpenDrop(key) {
+  document.getElementById(sdConfig[key].dropId).classList.add('open');
+}
+
+function sdCloseDrop(key) {
+  document.getElementById(sdConfig[key].dropId).classList.remove('open');
+}
+
+function sdBlur(key) {
+  sdTimers[key] = setTimeout(() => {
+    const cfg = sdConfig[key];
+    const hidden = document.getElementById(cfg.hiddenId).value;
+    if(!hidden) document.getElementById(cfg.inputId).value = '';
+    sdCloseDrop(key);
+  }, 200);
+}
+
+function sdRenderDrop(key, items, q) {
+  const cfg = sdConfig[key];
+  const drop = document.getElementById(cfg.dropId);
+  const currentVal = document.getElementById(cfg.hiddenId).value;
+  if(!items.length) {
+    drop.innerHTML = '<div class="sd-empty">Nessun risultato — premi + per aggiungere</div>';
+    return;
+  }
+  drop.innerHTML = items.map(v => {
+    const esc = v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const label = q ? esc.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<strong>$1</strong>') : esc;
+    return `<div class="sd-option${v===currentVal?' selected':''}" data-key="${key}" data-val="${esc}" onmousedown="sdSelectEl(this)">${label}</div>`;
+  }).join('');
+}
+
+function sdSelectEl(el) {
+  const key = el.getAttribute('data-key');
+  const val = el.getAttribute('data-val').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  sdSelect(key, val);
+}
+
+function sdSelect(key, val) {
+  if(sdTimers[key]) clearTimeout(sdTimers[key]);
+  const cfg = sdConfig[key];
+  document.getElementById(cfg.inputId).value = val;
+  document.getElementById(cfg.inputId).classList.add('has-value');
+  document.getElementById(cfg.hiddenId).value = val;
+  sdCloseDrop(key);
+  if(key === 'neg') onNegozioInput();
+}
+
+function sdReset(key) {
+  const cfg = sdConfig[key];
+  document.getElementById(cfg.inputId).value = '';
+  document.getElementById(cfg.inputId).classList.remove('has-value');
+  document.getElementById(cfg.hiddenId).value = '';
+}
+
+function sdSetValue(key, val) {
+  if(!val) return;
+  const cfg = sdConfig[key];
+  try {
+    document.getElementById(cfg.inputId).value = val;
+    document.getElementById(cfg.inputId).classList.add('has-value');
+    document.getElementById(cfg.hiddenId).value = val;
+  } catch(e) { console.log('sdSetValue error', key, val, e); }
+}
+
+function buildDataLists() {
+  const negList = document.getElementById('negList');
+  const subList = document.getElementById('subList');
+  const catList = document.getElementById('catList');
+  const allNegs = [...new Set(allExpenses.map(e=>e.negozio).filter(Boolean))].sort();
+  const allSubs = [...new Set(allExpenses.map(e=>e.subcategory).filter(Boolean))].sort();
+  const allCats = [...new Set(allExpenses.map(e=>e.category).filter(Boolean))].sort();
+  if(negList) negList.innerHTML = allNegs.map(n=>`<option value="${n}">`).join('');
+  if(subList) subList.innerHTML = allSubs.map(s=>`<option value="${s}">`).join('');
+  if(catList) catList.innerHTML = allCats.map(c=>`<option value="${c}">`).join('');
+}
+
+// DIZIONARIO INTELLIGENTE negozio → {subcategory, category}
+const smartDict = {
+  "Tutto Casa": {"subcategory":"Casalinghi","category":"🏠 Casa"},
+  "Farmasanitaria Babyland": {"subcategory":"Prima Infanzia","category":"🏥 Farmasanitaria"},
+  "Conad": {"subcategory":"Supermercato","category":"🛒 Spesa Alimentare"},
+  "Palestra Snellife": {"subcategory":"Abbonamento","category":"🏋️ Sport & Fitness"},
+  "Lucia": {"subcategory":"Colf","category":"🏠 Supporto Domestico"},
+  "Lorenza": {"subcategory":"Shampo Marzia","category":"💈 Cura Personale"},
+  "Bolletta Luce": {"subcategory":"Luce","category":"💡 Bollette & Utenze"},
+  "Bolletta Gas": {"subcategory":"Gas","category":"💡 Bollette & Utenze"},
+  "Bolletta Acqua": {"subcategory":"Acqua","category":"💡 Bollette & Utenze"},
+  "Scuola Gaia": {"subcategory":"Retta","category":"📚 Istruzione"},
+  "Scuola Gabriele": {"subcategory":"Retta","category":"📚 Istruzione"},
+  "Scuola Danza": {"subcategory":"Retta","category":"🏋️ Sport & Fitness"},
+  "Osteopata Fabio": {"subcategory":"Osteopata","category":"👨‍⚕️ Medici & Visite"},
+  "Dodeca": {"subcategory":"Supermercato","category":"🛒 Spesa Alimentare"},
+  "Decò": {"subcategory":"Supermercato","category":"🛒 Spesa Alimentare"},
+  "Privalia": {"subcategory":"Vestiti Gaia & Gabriele","category":"👗 Abbigliamento"},
+  "Farmacia Mascia": {"subcategory":"Farmaci","category":"🩺 Farmacia"},
+  "Farmacia": {"subcategory":"Farmaci","category":"🩺 Farmacia"},
+  "Parrucchiere": {"subcategory":"Shampo Marzia","category":"💈 Cura Personale"},
+  "Alaska Nord": {"subcategory":"Cibo Asporto","category":"🎉 Svago & Uscite"},
+  "Quota Regalo": {"subcategory":"Compagni Scuola Gaia","category":"🎁 Regali & Cerimonie"},
+  "Assicurazione Scuola": {"subcategory":"Assicurazione","category":"🏦 Tasse & Burocrazia"},
+  "Benzinaio": {"subcategory":"Benzina Marzia","category":"🚗 Auto & Trasporti"},
+  "Amazon": {"subcategory":"Giochi & Svago","category":"👶 Figli"},
+  "AliExpress": {"subcategory":"Giochi & Svago","category":"👶 Figli"},
+  "Anna Estetista": {"subcategory":"Ceretta","category":"💈 Cura Personale"},
+  "Centro Estetico": {"subcategory":"Unghie","category":"💈 Cura Personale"},
+  "EnzoLed": {"subcategory":"Illuminazione","category":"🏠 Casa"},
+  "Polleria": {"subcategory":"Cibo Asporto","category":"🥡 Asporto"},
+  "Edenlandia": {"subcategory":"Parco Divertimenti","category":"🎉 Svago & Uscite"},
+  "Luca Veronesi": {"subcategory":"Integratori","category":"🩺 Farmacia"},
+  "Life120": {"subcategory":"Integratori","category":"🩺 Farmacia"},
+  "Beneficenza": {"subcategory":"Donazioni","category":"💸 Beneficenza"},
+  "Barbiere": {"subcategory":"Barba e Capelli","category":"💈 Cura Personale"},
+  "Tennis Tavolo": {"subcategory":"Abbonamento","category":"🏋️ Sport & Fitness"},
+  "McDonald's": {"subcategory":"Fast Food","category":"🍽️ Fuori Casa"},
+  "Negozio Cibo": {"subcategory":"Cibo Asporto","category":"🍽️ Fuori Casa"},
+  "Pranzo Asporto": {"subcategory":"Cibo Asporto","category":"🍽️ Fuori Casa"},
+  "Centro Diagnostico Fernicola": {"subcategory":"Analisi","category":"👨‍⚕️ Medici & Visite"},
+  "Urologo": {"subcategory":"Specialista","category":"👨‍⚕️ Medici & Visite"},
+  "BluKids": {"subcategory":"Compleanno","category":"🎁 Regali & Cerimonie"},
+  "Charlie Pub": {"subcategory":"Pub","category":"🎉 Svago & Uscite"},
+  "Cartoleria": {"subcategory":"Materiale Scolastico","category":"📚 Istruzione"},
+  "Ferramenta": {"subcategory":"Manutenzione Casa","category":"🏠 Casa"},
+  "Cinese": {"subcategory":"Varie","category":"🏠 Casa"},
+  "Fotografo": {"subcategory":"Fotografo","category":"🎭 Intrattenimento"},
+  "Autofficina": {"subcategory":"Manutenzione","category":"🚗 Auto & Trasporti"},
+  "Coppola Pigna": {"subcategory":"Manutenzione Casa","category":"🏠 Casa"},
+};
+
+let autoFilled = false;
+
+function onNegozioInput() {
+  // Legge dal campo hidden (settato da sdSelect) OPPURE dal campo visibile
+  const val = (document.getElementById('inpNegozio').value || document.getElementById('sdNeg').value).trim();
+  if(!val) { document.getElementById('autoFillBadge').style.display='none'; autoFilled=false; return; }
+
+  // Cerca nel dizionario intelligente (match esatto)
+  let match = smartDict[val];
+  if(!match) {
+    const k = Object.keys(smartDict).find(k=>k.toLowerCase()===val.toLowerCase());
+    if(k) match = smartDict[k];
+  }
+  // Cerca tra le spese esistenti — preferisce spesa della stessa persona
+  if(!match) {
+    const samePersonMatch = allExpenses.find(e=>e.negozio&&e.negozio.toLowerCase()===val.toLowerCase()&&e.person===selectedPerson&&e.subcategory&&e.category);
+    const anyMatch = allExpenses.find(e=>e.negozio&&e.negozio.toLowerCase()===val.toLowerCase()&&e.subcategory&&e.category);
+    const ex = samePersonMatch || anyMatch;
+    if(ex) match={subcategory:ex.subcategory, category:ex.category};
+  }
+
+  // Adatta sottocategoria in base alla persona selezionata
+  if(match) {
+    let sub = match.subcategory;
+    const personName = selectedPerson === 'his' ? 'Fabio' : 'Marzia';
+    const otherName = selectedPerson === 'his' ? 'Marzia' : 'Fabio';
+    if(sub.includes(otherName)) sub = sub.replace(otherName, personName);
+    if(val.toLowerCase().includes('benzin')) sub = 'Benzina ' + personName;
+    sdSetValue('sub', sub);
+    sdSetValue('cat', match.category);
+    document.getElementById('autoFillBadge').style.display='inline';
+    autoFilled=true;
+  } else {
+    if(autoFilled) { sdReset('sub'); sdReset('cat'); document.getElementById('autoFillBadge').style.display='none'; autoFilled=false; }
+  }
+}
+
+function clearAutofill() {
+  autoFilled = false;
+  document.getElementById('autoFillBadge').style.display = 'none';
+}
+
+let notifyEnabled = localStorage.getItem('speseCoppiaNotify') === 'true';
+
+function toggleNotify() {
+  notifyEnabled = !notifyEnabled;
+  localStorage.setItem('speseCoppiaNotify', notifyEnabled);
+  updateNotifyUI();
+  showToast(notifyEnabled ? '🔔 Notifiche abilitate!' : '🔕 Notifiche disabilitate');
+}
+
+function updateNotifyUI() {
+  const toggle = document.getElementById('notifyToggle');
+  const thumb = document.getElementById('notifyThumb');
+  const status = document.getElementById('notifyStatus');
+  if(!toggle) return;
+  if(notifyEnabled) {
+    toggle.style.background = 'var(--blue)';
+    toggle.style.borderColor = 'var(--blue)';
+    thumb.style.background = '#fff';
+    thumb.style.left = '24px';
+    if(status) status.innerHTML = '🔔 Notifiche abilitate — email a Fabio e Marzia';
+    if(status) status.style.color = 'var(--green)';
+  } else {
+    toggle.style.background = 'var(--bg)';
+    toggle.style.borderColor = 'var(--border)';
+    thumb.style.background = '#ccc';
+    thumb.style.left = '1px';
+    if(status) status.innerHTML = '🔕 Notifiche disabilitate';
+    if(status) status.style.color = 'var(--text3)';
+  }
+}
+
+// Inizializza UI notifiche quando si apre impostazioni
+function initNotifyUI() { updateNotifyUI(); }
+function logout() {
+  localStorage.removeItem('speseCoppiaAuth');
+  location.reload();
+}
+
+function addNewVoice(type) {
+  newVoiceType = type;
+  const labels = {
+    negozio: {title:'Aggiungi nuovo negozio', label:'Nome negozio', placeholder:'Es. Nuovo Supermercato...'},
+    subcategory: {title:'Aggiungi nuova sottocategoria', label:'Nome sottocategoria', placeholder:'Es. Prima Infanzia...'},
+    category: {title:'Aggiungi nuova categoria', label:'Nome categoria', placeholder:'Es. 🏠 Casa...'}
+  };
+  const l = labels[type];
+  document.getElementById('newVoiceTitle').textContent = l.title;
+  document.getElementById('newVoiceLabel').textContent = l.label;
+  document.getElementById('newVoiceInput').placeholder = l.placeholder;
+  document.getElementById('newVoiceInput').value = '';
+  document.getElementById('newVoiceModal').classList.add('open');
+  setTimeout(() => document.getElementById('newVoiceInput').focus(), 300);
+}
+
+function closeNewVoice() {
+  document.getElementById('newVoiceModal').classList.remove('open');
+  newVoiceType = '';
+}
+
+function confirmNewVoice() {
+  const val = document.getElementById('newVoiceInput').value.trim();
+  if(!val) { showToast('Scrivi un nome','err'); return; }
+  if(newVoiceType === 'negozio') {
+    if(!negozi.includes(val)) negozi.push(val);
+    buildDataLists();
+    sdSetValue('neg', val);
+    onNegozioInput();
+  } else if(newVoiceType === 'subcategory') {
+    if(!subcategories.includes(val)) subcategories.push(val);
+    buildDataLists();
+    sdSetValue('sub', val);
+  } else if(newVoiceType === 'category') {
+    if(!categories.includes(val)) categories.push(val);
+    buildDataLists();
+    sdSetValue('cat', val);
+  }
+  closeNewVoice();
+  showToast(`✅ "${val}" aggiunto!`);
+}
+
+// AGGIUNGI
+function selectPerson(p) {
+  selectedPerson = p;
+  document.getElementById('btnHis').className = 'ptbtn his' + (p==='his'?' active':'');
+  document.getElementById('btnHer').className = 'ptbtn her' + (p==='her'?' active':'');
+  // Ricalcola autofill se c'è già un negozio selezionato
+  const negVal = document.getElementById('inpNegozio').value || document.getElementById('sdNeg').value;
+  if(negVal) onNegozioInput();
+}
+
+async function saveExpense() {
+  const date = document.getElementById('inpDate').value;
+  const amount = parseFloat(document.getElementById('inpAmount').value);
+  const negozio = document.getElementById('inpNegozio').value.trim();
+  const subcategory = document.getElementById('inpSubcat').value.trim();
+  const category = document.getElementById('inpCat').value.trim();
+  const note = document.getElementById('inpNote').value.trim();
+
+  if(!date||!amount||!negozio||!category) { showToast('Compila Data, Importo, Negozio e Categoria','err'); return; }
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true; btn.textContent = 'Salvataggio...';
+
+  const id = Date.now().toString(36);
+  const month = date.substring(0,7);
+  const exp = {id, date, month, person:selectedPerson, negozio, subcategory, category, amount, note};
+
+  allExpenses.push(exp);
+
+  // Aggiorna dizionario con nuova associazione
+  if(negozio && subcategory && category) {
+    smartDict[negozio] = {subcategory, category};
+  }
+
+  if(!negozi.includes(negozio)) negozi.push(negozio);
+  if(subcategory && !subcategories.includes(subcategory)) subcategories.push(subcategory);
+  if(!categories.includes(category)) categories.push(category);
+  buildDataLists(); buildFilters(); buildExportFilters();
+
+  // Aggiungi mese ai selettori se nuovo
+  ['dashMonth','statMonth','listMonth'].forEach(id => {
+    const sel = document.getElementById(id);
+    if(![...sel.options].some(o=>o.value===month)) {
+      const opt = document.createElement('option');
+      opt.value = month; opt.text = formatMonth(month);
+      sel.appendChild(opt);
+    }
+  });
+
+  try {
+    setSyncStatus('loading');
+    await fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',body:JSON.stringify({action:'add',...exp, notify: notifyEnabled})});
+    setSyncStatus('ok');
+    showToast('✅ Spesa aggiunta!');
+  } catch(e) {
+    setSyncStatus('err');
+    showToast('⚠️ Salvato in locale, sync fallita','err');
+  }
+
+  document.getElementById('inpAmount').value='';
+  sdReset('neg'); sdReset('sub'); sdReset('cat');
+  document.getElementById('inpNote').value='';
+  document.getElementById('autoFillBadge').style.display='none';
+  autoFilled = false;
+  btn.disabled=false; btn.textContent='Aggiungi Spesa';
+}
+
+// EDIT
+function openEdit(id) {
+  const e = allExpenses.find(x=>x.id===id);
+  if(!e) return;
+  editingId = id;
+  editPerson = e.person;
+  document.getElementById('ePerson_his').className='ptbtn his'+(e.person==='his'?' active':'');
+  document.getElementById('ePerson_her').className='ptbtn her'+(e.person==='her'?' active':'');
+  document.getElementById('eDate').value = e.date;
+  document.getElementById('eAmount').value = e.amount;
+  document.getElementById('eNegozio').value = e.negozio||'';
+  document.getElementById('eSubcat').value = e.subcategory||'';
+  document.getElementById('eCat').value = e.category||'';
+  document.getElementById('eNote').value = e.note||'';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function setEditPerson(p) {
+  editPerson = p;
+  document.getElementById('ePerson_his').className='ptbtn his'+(p==='his'?' active':'');
+  document.getElementById('ePerson_her').className='ptbtn her'+(p==='her'?' active':'');
+}
+
+function closeEdit() { document.getElementById('editModal').classList.remove('open'); editingId=null; }
+
+async function saveEdit() {
+  if(!editingId) return;
+  const e = allExpenses.find(x=>x.id===editingId);
+  if(!e) return;
+  e.person = editPerson;
+  e.date = document.getElementById('eDate').value;
+  e.amount = parseFloat(document.getElementById('eAmount').value);
+  e.negozio = document.getElementById('eNegozio').value.trim();
+  e.subcategory = document.getElementById('eSubcat').value.trim();
+  e.category = document.getElementById('eCat').value.trim();
+  e.note = document.getElementById('eNote').value.trim();
+  e.month = e.date.substring(0,7);
+  closeEdit();
+  renderSpese(); renderDashboard();
+  try {
+    setSyncStatus('loading');
+    await fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',body:JSON.stringify({action:'update',...e})});
+    setSyncStatus('ok'); showToast('✅ Modificato!');
+  } catch(err) { setSyncStatus('err'); showToast('⚠️ Sync fallita','err'); }
+}
+
+async function deleteExpense() {
+  if(!editingId) return;
+  if(!confirm('Eliminare questa spesa?')) return;
+  allExpenses = allExpenses.filter(e=>e.id!==editingId);
+  const id = editingId;
+  closeEdit();
+  renderSpese(); renderDashboard();
+  try {
+    setSyncStatus('loading');
+    await fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',body:JSON.stringify({action:'delete',id})});
+    setSyncStatus('ok'); showToast('🗑️ Eliminata!');
+  } catch(e) { setSyncStatus('err'); showToast('⚠️ Sync fallita','err'); }
+}
+
+// CLOUD SYNC
+async function loadFromCloud() {
+  try {
+    setSyncStatus('loading');
+    const r = await fetch(SCRIPT_URL + '?action=getAll');
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    if(d && d.expenses && d.expenses.length > 0) {
+      // Mantieni dati locali (con negozio), aggiorna/aggiungi dal cloud
+      const localById = {};
+      allExpenses.forEach(e => { localById[e.id] = e; });
+      const seen = new Set();
+      d.expenses.forEach(e => {
+        const eid = e.id||e.ID;
+        if(seen.has(eid)) return;
+        seen.add(eid);
+        const rawDate = e.date||e.Data||'';
+        const date = normalizeDate(rawDate);
+        const sub = e.subcategory||e.subcategoria||'';
+        const local = localById[eid];
+        localById[eid] = {
+          id: eid,
+          date: date,
+          month: date.substring(0,7),
+          person: e.person==='his'||e.person==='Fabio'?'his':'her',
+          negozio: e.negozio||e.desc||(local&&local.negozio)||'',
+          subcategory: (sub==='yes'||sub==='no'||!sub)?(local&&local.subcategory||''):sub,
+          category: e.category||e.categoria||e.Categoria||(local&&local.category)||'',
+          amount: parseFloat(e.amount||e.Importo||0),
+          note: e.note||(local&&local.note)||''
+        };
+      });
+      allExpenses = Object.values(localById);
+      buildDataLists(); buildFilters();
+      renderDashboard(); renderStats(); renderSpese();
+    }
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('err');
+  }
+}
+
+// BUDGET
+function loadBudgets() {
+  const saved = localStorage.getItem('speseBudgets');
+  if(saved) try { budgets = JSON.parse(saved); } catch(e) {}
+}
+function saveBudgets() { localStorage.setItem('speseBudgets',JSON.stringify(budgets)); }
+
+function renderBudget() {
+  const cats = [...new Set(allExpenses.map(e=>e.category).filter(Boolean))].sort();
+  const curMonth = new Date().toISOString().substring(0,7);
+  const monthData = allExpenses.filter(e=>e.month===curMonth);
+  
+  document.getElementById('budgetList').innerHTML = cats.map(cat => {
+    const spent = monthData.filter(e=>e.category===cat).reduce((a,b)=>a+b.amount,0);
+    const budget = budgets[cat]||0;
+    const pct = budget>0 ? Math.min(Math.round(spent/budget*100),100) : 0;
+    const barClass = pct>=100?'budget-over':pct>=80?'budget-warn':'budget-ok';
+    return `<div class="budget-item">
+      <div class="budget-cat">${cat}</div>
+      <div class="budget-bar-wrap"><div class="budget-bar ${barClass}" style="width:${pct}%"></div></div>
+      <div class="budget-val">€${spent.toFixed(0)} / <input class="budget-input" type="number" value="${budget||''}" placeholder="Budget" onchange="setBudget('${cat}',this.value)"></div>
+    </div>`;
+  }).join('');
+}
+
+function setBudget(cat, val) {
+  budgets[cat] = parseFloat(val)||0;
+  saveBudgets();
+  renderBudget();
+}
+
+// IMPORT EXCEL
+async function importExcel(input) {
+  const file = input.files[0];
+  if(!file) return;
+  showToast('Importazione in corso...');
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary',cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {raw:false});
+      let count = 0;
+      for(const row of rows) {
+        const dataRaw = row['Data']||row['data']||'';
+        const chi = row['Chi']||row['chi']||'';
+        const importo = parseFloat(row['Importo (€)']||row['Importo']||row['importo']||0);
+        if(!dataRaw||!importo) continue;
+        const date = normalizeDate(dataRaw);
+        const person = chi==='Fabio'||chi==='his'?'his':'her';
+        const negozio = row['Negozio']||row['negozio']||'';
+        const subcategory = row['Sottocategoria']||row['subcategory']||'';
+        const category = row['Categoria']||row['categoria']||'';
+        const note = row['Note']||row['note']||'';
+        const id = Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+        const month = date.substring(0,7);
+        const exp = {id,date,month,person,negozio,subcategory,category,amount:importo,note};
+        allExpenses.push(exp);
+        count++;
+        try { await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'add',...exp})}); } catch(e){}
+      }
+      buildDataLists(); buildFilters();
+      renderDashboard(); renderStats(); renderSpese();
+      showToast(`✅ ${count} spese importate!`);
+    } catch(err) {
+      showToast('❌ Errore importazione','err');
+    }
+  };
+  reader.readAsBinaryString(file);
+  input.value='';
+}
+
+function normalizeDate(raw) {
+  if(!raw) return '';
+  const s = String(raw).trim();
+  const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if(m1) {
+    let [,d,mo,y]=m1; if(y.length===2)y='20'+y;
+    return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  if(s.includes('T')) {
+    const dt = new Date(s);
+    if(!isNaN(dt)) {
+      const offset = dt.getTimezoneOffset();
+      const local = new Date(dt.getTime() - offset * 60000);
+      return local.toISOString().substring(0, 10);
+    }
+  }
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
+  return s.substring(0,10);
+}
+
+function formatMonth(m) {
+  if(!m||!m.includes('-')) return '';
+  const months = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const [y,mo] = m.substring(0,7).split('-');
+  const idx = parseInt(mo)-1;
+  if(idx<0||idx>11) return '';
+  return months[idx]+' '+y;
+}
+
+// EXPORT
+function getExportData() {
+  const from = document.getElementById('expFrom')?.value || '';
+  const to = document.getElementById('expTo')?.value || '';
+  const month = document.getElementById('expMonth')?.value || '';
+  const chi = document.getElementById('expChi')?.value || '';
+  const cat = document.getElementById('expCat')?.value || '';
+  const sub = document.getElementById('expSub')?.value || '';
+  const neg = document.getElementById('expNeg')?.value || '';
+  return allExpenses.filter(e => {
+    if(chi && e.person !== chi) return false;
+    if(month && e.month !== month) return false;
+    if(cat && e.category !== cat) return false;
+    if(sub && e.subcategory !== sub) return false;
+    if(neg && e.negozio !== neg) return false;
+    if(from && e.date < from) return false;
+    if(to && e.date > to) return false;
+    return true;
+  }).sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function buildExportFilters() {
+  const cats = [...new Set(allExpenses.map(e=>e.category).filter(Boolean))].sort();
+  const subs = [...new Set(allExpenses.map(e=>e.subcategory).filter(Boolean))].sort();
+  const negs = [...new Set(allExpenses.map(e=>e.negozio).filter(Boolean))].sort();
+  const months = [...new Set(allExpenses.map(e=>e.month).filter(Boolean))].sort();
+  const expCat = document.getElementById('expCat');
+  if(expCat) expCat.innerHTML = '<option value="">Tutte</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const expSub = document.getElementById('expSub');
+  if(expSub) expSub.innerHTML = '<option value="">Tutte</option>' + subs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  const expNeg = document.getElementById('expNeg');
+  if(expNeg) expNeg.innerHTML = '<option value="">Tutti</option>' + negs.map(n=>`<option value="${n}">${n}</option>`).join('');
+  const expMonth = document.getElementById('expMonth');
+  if(expMonth) {
+    expMonth.innerHTML = '<option value="">Tutti i mesi</option>' + months.map(m=>`<option value="${m}">${formatMonth(m)}</option>`).join('');
+  }
+  updateExpCount();
+  ['expFrom','expTo','expMonth','expChi','expCat','expSub','expNeg'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', updateExpCount);
+  });
+}
+
+function updateExpCount() {
+  const el = document.getElementById('expCount');
+  if(el) el.textContent = getExportData().length;
+}
+
+function exportCSV() {
+  const data = getExportData();
+  if(!data.length) { showToast('Nessuna spesa da esportare','err'); return; }
+  const rows = [['Data','Chi','Importo','Negozio','Sottocategoria','Categoria','Note']];
+  data.forEach(e=>rows.push([e.date,e.person==='his'?'Fabio':'Marzia',e.amount,e.negozio,e.subcategory,e.category,e.note]));
+  const csv = rows.map(r=>r.map(v=>`"${v||''}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('\uFEFF'+csv);
+  a.download='SpeseCoppia_export.csv'; a.click();
+  showToast(`✅ ${data.length} spese esportate!`);
+}
+
+function exportPDF() {
+  const filtered = getExportData();
+  if(!filtered.length) { showToast('Nessuna spesa da esportare','err'); return; }
+  const tot = filtered.reduce((a,b)=>a+b.amount,0);
+  const his = filtered.filter(e=>e.person==='his').reduce((a,b)=>a+b.amount,0);
+  const her = filtered.filter(e=>e.person==='her').reduce((a,b)=>a+b.amount,0);
+  const bycat={};
+  filtered.forEach(e=>{if(!bycat[e.category])bycat[e.category]={tot:0,his:0,her:0};bycat[e.category].tot+=e.amount;if(e.person==='his')bycat[e.category].his+=e.amount;else bycat[e.category].her+=e.amount;});
+  // Build subtitle from active filters
+  const parts=[];
+  const chi=document.getElementById('expChi')?.value; if(chi) parts.push(chi==='his'?'Fabio':'Marzia');
+  const month=document.getElementById('expMonth')?.value; if(month) parts.push(formatMonth(month));
+  const cat=document.getElementById('expCat')?.value; if(cat) parts.push(cat);
+  const sub=document.getElementById('expSub')?.value; if(sub) parts.push(sub);
+  const neg=document.getElementById('expNeg')?.value; if(neg) parts.push(neg);
+  const from=document.getElementById('expFrom')?.value; const to=document.getElementById('expTo')?.value;
+  if(from||to) parts.push(`${from||'...'} → ${to||'...'}`);
+  const subtitle = parts.length ? parts.join(' · ') : 'Tutte le spese';
+  const rows = filtered.sort((a,b)=>(b.date||"").substring(0,10).localeCompare((a.date||"").substring(0,10))).map(e=>`<tr><td>${e.date}</td><td style="color:${e.person==='his'?'#007AFF':'#FF2D78'}">${e.person==='his'?'Fabio':'Marzia'}</td><td>${e.negozio||''}</td><td>${e.subcategory||''}</td><td>${e.category||''}</td><td style="text-align:right;font-weight:700">€${parseFloat(e.amount).toFixed(2)}</td></tr>`).join('');
+  const catRows = Object.entries(bycat).sort((a,b)=>b[1].tot-a[1].tot).map(([k,v])=>`<tr><td>${k}</td><td style="color:#007AFF">€${v.his.toFixed(2)}</td><td style="color:#FF2D78">€${v.her.toFixed(2)}</td><td style="font-weight:700">€${v.tot.toFixed(2)}</td></tr>`).join('');
+  const html=`<html><head><meta charset="utf-8"><title>SpeseCoppia — ${subtitle}</title><style>body{font-family:Arial,sans-serif;color:#1C1C1E;padding:30px}h1{color:#007AFF;margin-bottom:4px}h2{color:#007AFF;margin-bottom:12px}.sub{color:#8E8E93;font-size:13px;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-bottom:24px}th{background:#F2F2F7;padding:8px 10px;text-align:left;font-size:12px}td{padding:7px 10px;border-bottom:1px solid #E5E5EA;font-size:13px}.cards{display:flex;gap:16px;margin-bottom:24px}.card{flex:1;padding:16px;border-radius:12px;border:1px solid #E5E5EA}@media print{body{padding:15px}}</style></head><body><h1>SpeseCoppia</h1><div class="sub">${subtitle} · Generato il ${new Date().toLocaleDateString('it-IT')} · ${filtered.length} spese</div><div class="cards"><div class="card"><div style="font-size:11px;color:#8E8E93;font-weight:700;text-transform:uppercase">Totale</div><div style="font-size:28px;font-weight:700;color:#34C759">€${tot.toFixed(2)}</div></div><div class="card"><div style="font-size:11px;color:#8E8E93;font-weight:700;text-transform:uppercase">Fabio</div><div style="font-size:28px;font-weight:700;color:#007AFF">€${his.toFixed(2)}</div></div><div class="card"><div style="font-size:11px;color:#8E8E93;font-weight:700;text-transform:uppercase">Marzia</div><div style="font-size:28px;font-weight:700;color:#FF2D78">€${her.toFixed(2)}</div></div></div><h2>Per Categoria</h2><table><thead><tr><th>Categoria</th><th>Fabio</th><th>Marzia</th><th>Totale</th></tr></thead><tbody>${catRows}</tbody></table><h2>Lista Spese</h2><table><thead><tr><th>Data</th><th>Chi</th><th>Negozio</th><th>Sottocategoria</th><th>Categoria</th><th style="text-align:right">Importo</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const w=window.open('','_blank'); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500);
+  showToast(`✅ ${filtered.length} spese nel report!`);
+}
+
+// GESTIONE VOCI
+let gvType = 'negozio';
+let gvEditing = '';
+
+function switchGVTab(type, btn) {
+  gvType = type;
+  document.querySelectorAll('#page-impostazioni .filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('gvSearch').value = '';
+  renderGVList();
+}
+
+function renderGVList() {
+  const search = document.getElementById('gvSearch')?.value.toLowerCase() || '';
+  let items = [];
+  if(gvType === 'negozio') items = [...new Set(allExpenses.map(e=>e.negozio).filter(Boolean))].sort();
+  else if(gvType === 'subcategory') items = [...new Set(allExpenses.map(e=>e.subcategory).filter(Boolean))].sort();
+  else items = [...new Set(allExpenses.map(e=>e.category).filter(Boolean))].sort();
+
+  if(search) items = items.filter(i => i.toLowerCase().includes(search));
+
+  const counts = {};
+  items.forEach(item => {
+    counts[item] = allExpenses.filter(e => {
+      if(gvType==='negozio') return e.negozio===item;
+      if(gvType==='subcategory') return e.subcategory===item;
+      return e.category===item;
+    }).length;
+  });
+
+  const container = document.getElementById('gvList');
+  if(!items.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div>Nessuna voce trovata</div></div>';
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;">${item}</div>
+        <div style="font-size:11px;color:var(--text3);">${counts[item]} spese</div>
+      </div>
+      <button class="btn-sm" onclick="openRename('${item.replace(/'/g,"\\'")}','${gvType}')" style="font-size:12px;padding:5px 12px;">✏️ Modifica</button>
+    </div>
+  `).join('');
+}
+
+function openRename(oldVal, type) {
+  gvEditing = {val: oldVal, type};
+  const labels = {negozio:'Rinomina negozio',subcategory:'Rinomina sottocategoria',category:'Rinomina categoria'};
+  document.getElementById('renameTitle').textContent = labels[type] || 'Rinomina';
+  document.getElementById('renameInput').value = oldVal;
+  document.getElementById('renameModal').classList.add('open');
+  setTimeout(() => document.getElementById('renameInput').focus(), 300);
+}
+
+function closeRename() {
+  document.getElementById('renameModal').classList.remove('open');
+  gvEditing = '';
+}
+
+async function confirmRename() {
+  const newVal = document.getElementById('renameInput').value.trim();
+  if(!newVal || !gvEditing) { showToast('Scrivi un nome','err'); return; }
+  const {val: oldVal, type} = gvEditing;
+  if(newVal === oldVal) { closeRename(); return; }
+
+  const affected = [];
+  allExpenses.forEach(e => {
+    if(type==='negozio' && e.negozio===oldVal) { e.negozio=newVal; affected.push(e); }
+    else if(type==='subcategory' && e.subcategory===oldVal) { e.subcategory=newVal; affected.push(e); }
+    else if(type==='category' && e.category===oldVal) { e.category=newVal; affected.push(e); }
+  });
+
+  // Aggiorna smartDict se negozio
+  if(type==='negozio' && smartDict[oldVal]) {
+    smartDict[newVal] = smartDict[oldVal];
+    delete smartDict[oldVal];
+  }
+
+  buildDataLists(); buildFilters(); buildExportFilters();
+  closeRename();
+  renderGVList();
+  showToast(`✅ "${oldVal}" → "${newVal}" su ${affected.length} spese — sincronizzazione in corso...`);
+
+  // Sincronizza tutte le spese modificate sul cloud
+  if(affected.length > 0) {
+    setSyncStatus('loading');
+    let errors = 0;
+    for(const e of affected) {
+      try {
+        await fetch(SCRIPT_URL, {method:'POST', mode:'no-cors', body:JSON.stringify({action:'update', ...e})});
+      } catch(err) { errors++; }
+    }
+    if(errors === 0) {
+      setSyncStatus('ok');
+      showToast(`✅ "${newVal}" sincronizzato su ${affected.length} spese!`);
+    } else {
+      setSyncStatus('err');
+      showToast(`⚠️ ${errors} spese non sincronizzate`, 'err');
+    }
+  }
+}
+
+async function deleteVoice() {
+  if(!gvEditing) return;
+  const {val, type} = gvEditing;
+  const affected = allExpenses.filter(e =>
+    (type==='negozio'&&e.negozio===val) ||
+    (type==='subcategory'&&e.subcategory===val) ||
+    (type==='category'&&e.category===val)
+  );
+  if(!confirm(`Eliminare "${val}" da ${affected.length} spese? Il campo verrà lasciato vuoto.`)) return;
+
+  affected.forEach(e => {
+    if(type==='negozio') e.negozio='';
+    else if(type==='subcategory') e.subcategory='';
+    else if(type==='category') e.category='';
+  });
+
+  if(type==='negozio' && smartDict[val]) delete smartDict[val];
+  buildDataLists(); buildFilters(); buildExportFilters();
+  closeRename();
+  renderGVList();
+  showToast(`🗑️ "${val}" eliminato — sincronizzazione in corso...`);
+
+  // Sincronizza sul cloud
+  if(affected.length > 0) {
+    setSyncStatus('loading');
+    let errors = 0;
+    for(const e of affected) {
+      try {
+        await fetch(SCRIPT_URL, {method:'POST', mode:'no-cors', body:JSON.stringify({action:'update', ...e})});
+      } catch(err) { errors++; }
+    }
+    setSyncStatus(errors===0?'ok':'err');
+    if(errors===0) showToast(`✅ Eliminazione sincronizzata su ${affected.length} spese!`);
+    else showToast(`⚠️ ${errors} spese non sincronizzate`,'err');
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if(e.target===this) closeEdit();
+});
+document.getElementById('renameModal').addEventListener('click', function(e) {
+  if(e.target===this) closeRename();
+});
+document.getElementById('renameInput').addEventListener('keydown', function(e) { if(e.key==='Enter') confirmRename(); });
+</script>
+</body>
+</html>
